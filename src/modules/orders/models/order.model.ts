@@ -3,6 +3,7 @@ import { OrderStatus } from '@prisma/client';
 import { UserModel } from '../../users/models/user.model';
 import { RestaurantModel } from '../../restaurants/models/restaurant.model';
 import { MenuItemModel } from '../../menus/models/menu-item.model';
+import { PaymentModel } from '../../payments/models/payment.model';
 
 registerEnumType(OrderStatus, {
   name: 'OrderStatus',
@@ -55,6 +56,9 @@ export class OrderModel {
 
   @Field(() => RestaurantModel, { nullable: true })
   restaurant?: RestaurantModel;
+
+  @Field(() => PaymentModel, { nullable: true })
+  payment?: PaymentModel;
 
   @Field()
   createdAt: Date;

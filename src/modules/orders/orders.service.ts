@@ -4,7 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Order, OrderStatus, UserRole } from '@prisma/client';
+import {
+  Order,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+  UserRole,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateOrderInput,
@@ -16,6 +22,7 @@ const orderInclude = {
   items: { include: { menuItem: true } },
   user: true,
   restaurant: true,
+  payment: true,
 } as const;
 
 @Injectable()
@@ -40,20 +47,35 @@ export class OrdersService {
       input.items,
     );
 
-    const order = await this.prisma.order.create({
-      data: {
-        userId,
-        restaurantId: input.restaurantId,
-        total: totals.total,
-        items: {
-          create: menuItems.map((item) => ({
-            menuItemId: item.id,
-            quantity: totals.quantities.get(item.id) ?? 1,
-            unitPrice: item.price,
-          })),
+    const order = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          userId,
+          restaurantId: input.restaurantId,
+          total: totals.total,
+          items: {
+            create: menuItems.map((item) => ({
+              menuItemId: item.id,
+              quantity: totals.quantities.get(item.id) ?? 1,
+              unitPrice: item.price,
+            })),
+          },
         },
-      },
-      include: orderInclude,
+        include: orderInclude,
+      });
+
+      await tx.payment.create({
+        data: {
+          orderId: created.id,
+          method: input.paymentMethod ?? PaymentMethod.CASH_ON_DELIVERY,
+          amount: created.total,
+        },
+      });
+
+      return tx.order.findUniqueOrThrow({
+        where: { id: created.id },
+        include: orderInclude,
+      });
     });
 
     return order;
@@ -106,10 +128,26 @@ export class OrdersService {
       throw new BadRequestException('A cancelled order cannot be updated');
     }
 
-    return this.prisma.order.update({
-      where: { id },
-      data: { status },
-      include: orderInclude,
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id },
+        data: { status },
+        include: orderInclude,
+      });
+
+      if (status === OrderStatus.CANCELLED) {
+        await tx.payment.updateMany({
+          where: { orderId: id, status: PaymentStatus.PENDING },
+          data: { status: PaymentStatus.CANCELLED },
+        });
+
+        return tx.order.findUniqueOrThrow({
+          where: { id },
+          include: orderInclude,
+        });
+      }
+
+      return updated;
     });
   }
 
