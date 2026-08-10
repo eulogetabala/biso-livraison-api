@@ -57,11 +57,30 @@ model User {
 
   orders         Order[]
   deliveries     Delivery[]
+  driverProfile  DriverProfile?
   reviews        Review[]    @relation("ReviewAuthor")
   driverReviews  Review[]    @relation("ReviewDriver")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model DriverProfile {
+  id           String  @id @default(uuid())
+
+  userId       String  @unique
+
+  vehicleType  String  @default("MOTO")
+  vehiclePlate String?
+
+  isAvailable  Boolean @default(false)
+
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isAvailable])
 }
 
 model Restaurant {
