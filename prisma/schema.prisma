@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum UserRole {
+  CLIENT
+  DRIVER
+  ADMIN
+  PARTNER
+}
+
+enum MenuItemCategory {
+  APPETIZER
+  MAIN_COURSE
+  DESSERT
+  DRINK
+  FRUIT
+  LUNCH
+  SNACK
+  SIDE
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+}
+
+
+model User {
+  id        String   @id @default(uuid())
+
+  email     String   @unique
+  password  String
+
+  firstName String
+  lastName  String
+
+  phone     String
+
+  role      UserRole @default(CLIENT)
+
+  orders     Order[]
+  deliveries Delivery[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Restaurant {
+  id          String   @id @default(uuid())
+
+  name        String
+  description String?
+  address     String
+  city        String
+  zipCode     String
+  phone       String
+  cuisineType String
+
+  isActive    Boolean  @default(true)
+  rating      Float    @default(0)
+
+  menuItems   MenuItem[]
+  orders      Order[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MenuItem {
+  id           String   @id @default(uuid())
+
+  restaurantId String
+
+  name         String
+  description  String?
+  price        Float
+  category     MenuItemCategory
+
+  isAvailable  Boolean  @default(true)
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([restaurantId])
+}
+
+model Order {
+  id           String      @id @default(uuid())
+
+  userId       String
+  restaurantId String
+
+  status       OrderStatus @default(PENDING)
+  total        Float       @default(0)
+
+  items        OrderItem[]
+
+  delivery     Delivery?
+
+  user         User        @relation(fields: [userId], references: [id])
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([restaurantId])
+  @@index([status])
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+
+  orderId    String
+  menuItemId String
+
+  quantity   Int
+  unitPrice  Float
+
+  order      Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem  @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+}
+
+model Delivery {
+  id          String         @id @default(uuid())
+
+  orderId     String         @unique
+  driverId    String
+
+  status      DeliveryStatus @default(ASSIGNED)
+
+  pickedUpAt  DateTime?
+  deliveredAt DateTime?
+
+  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  driver      User           @relation(fields: [driverId], references: [id])
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([driverId])
+  @@index([status])
+}
