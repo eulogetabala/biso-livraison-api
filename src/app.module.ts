@@ -12,6 +12,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { DeliveriesModule } from './modules/deliveries/deliveries.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { DriversModule } from './modules/drivers/drivers.module';
+import { TrackingModule } from './modules/tracking/tracking.module';
 import configuration, { AppConfig } from './config/configuration';
 
 @Module({
@@ -56,6 +57,7 @@ import configuration, { AppConfig } from './config/configuration';
     DeliveriesModule,
     ReviewsModule,
     DriversModule,
+    TrackingModule,
   ],
 })
 export class AppModule {}

@@ -201,6 +201,8 @@ model Delivery {
   pickedUpAt  DateTime?
   deliveredAt DateTime?
 
+  trackingEvents TrackingEvent[]
+
   order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   driver      User           @relation(fields: [driverId], references: [id])
 
@@ -209,4 +211,22 @@ model Delivery {
 
   @@index([driverId])
   @@index([status])
+}
+
+model TrackingEvent {
+  id         String       @id @default(uuid())
+
+  deliveryId String
+
+  status     DeliveryStatus
+  message    String?
+  latitude   Float?
+  longitude  Float?
+
+  delivery   Delivery     @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime     @default(now())
+
+  @@index([deliveryId])
+  @@index([createdAt])
 }
