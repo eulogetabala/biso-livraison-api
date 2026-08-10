@@ -1,8 +1,11 @@
 import { Field, ID, InputType, Int } from '@nestjs/graphql';
+import { PaymentMethod } from '@prisma/client';
 import {
   ArrayMinSize,
   IsArray,
+  IsEnum,
   IsInt,
+  IsOptional,
   IsUUID,
   Max,
   Min,
@@ -31,4 +34,12 @@ export class CreateOrderInput {
   @IsArray()
   @ArrayMinSize(1)
   items: CreateOrderItemInput[];
+
+  @Field(() => PaymentMethod, {
+    nullable: true,
+    defaultValue: PaymentMethod.CASH_ON_DELIVERY,
+  })
+  @IsOptional()
+  @IsEnum(PaymentMethod)
+  paymentMethod?: PaymentMethod;
 }
