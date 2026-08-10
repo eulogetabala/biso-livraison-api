@@ -55,8 +55,10 @@ model User {
 
   role      UserRole @default(CLIENT)
 
-  orders     Order[]
-  deliveries Delivery[]
+  orders         Order[]
+  deliveries     Delivery[]
+  reviews        Review[]    @relation("ReviewAuthor")
+  driverReviews  Review[]    @relation("ReviewDriver")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,6 +80,7 @@ model Restaurant {
 
   menuItems   MenuItem[]
   orders      Order[]
+  reviews     Review[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -114,6 +117,7 @@ model Order {
   total        Float       @default(0)
 
   items        OrderItem[]
+  review       Review?
 
   delivery     Delivery?
 
@@ -141,6 +145,30 @@ model OrderItem {
   menuItem   MenuItem  @relation(fields: [menuItemId], references: [id])
 
   @@index([orderId])
+}
+
+model Review {
+  id           String  @id @default(uuid())
+
+  orderId      String  @unique
+  userId       String
+  restaurantId String?
+  driverId     String?
+
+  rating       Int
+  comment      String?
+
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  author       User      @relation("ReviewAuthor", fields: [userId], references: [id])
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  driver       User?     @relation("ReviewDriver", fields: [driverId], references: [id])
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([restaurantId])
+  @@index([driverId])
+  @@index([userId])
 }
 
 model Delivery {

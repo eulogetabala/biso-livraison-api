@@ -10,6 +10,7 @@ import { RestaurantsModule } from './modules/restaurants/restaurants.module';
 import { MenusModule } from './modules/menus/menus.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { DeliveriesModule } from './modules/deliveries/deliveries.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 import configuration, { AppConfig } from './config/configuration';
 
 @Module({
@@ -52,6 +53,7 @@ import configuration, { AppConfig } from './config/configuration';
     MenusModule,
     OrdersModule,
     DeliveriesModule,
+    ReviewsModule,
   ],
 })
 export class AppModule {}
