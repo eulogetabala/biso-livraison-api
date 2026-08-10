@@ -41,6 +41,14 @@ enum DeliveryStatus {
   DELIVERED
 }
 
+enum ParcelStatus {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
 
 model User {
   id        String   @id @default(uuid())
@@ -58,6 +66,7 @@ model User {
   orders         Order[]
   deliveries     Delivery[]
   driverProfile  DriverProfile?
+  parcels        Parcel[]
   reviews        Review[]    @relation("ReviewAuthor")
   driverReviews  Review[]    @relation("ReviewDriver")
 
@@ -229,4 +238,29 @@ model TrackingEvent {
 
   @@index([deliveryId])
   @@index([createdAt])
+}
+
+model Parcel {
+  id             String       @id @default(uuid())
+
+  senderId       String
+
+  receiverName   String
+  receiverPhone  String
+  receiverAddress String
+
+  description    String?
+  weight         Float        @default(0)
+
+  status         ParcelStatus @default(PENDING)
+
+  deliveredAt    DateTime?
+
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([senderId])
+  @@index([status])
 }
