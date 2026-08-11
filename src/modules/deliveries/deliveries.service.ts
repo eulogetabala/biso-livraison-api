@@ -40,6 +40,36 @@ const ORDER_STATUS_BY_DELIVERY: Record<DeliveryStatus, OrderStatus> = {
 export class DeliveriesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async assignAvailableDriver(orderId: string): Promise<Delivery> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { delivery: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order ${orderId} not found`);
+    }
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new BadRequestException(
+        'Cannot assign a driver to a cancelled order',
+      );
+    }
+    if (order.delivery) {
+      throw new BadRequestException(
+        'A driver is already assigned to this order',
+      );
+    }
+
+    const driver = await this.findAvailableDriver();
+    if (!driver) {
+      throw new BadRequestException(
+        'No available driver right now. Please try again later.',
+      );
+    }
+
+    return this.assign(orderId, driver.id);
+  }
+
   async assign(orderId: string, driverId: string): Promise<Delivery> {
     const [driver, order] = await Promise.all([
       this.prisma.user.findUnique({ where: { id: driverId } }),
@@ -81,6 +111,15 @@ export class DeliveriesService {
           type: NotificationType.DELIVERY_STATUS,
           title: 'Livreur assigné',
           message: 'Un livreur a été assigné à votre commande',
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: driverId,
+          type: NotificationType.DELIVERY_STATUS,
+          title: 'Nouvelle livraison',
+          message: `Une nouvelle livraison vous a été assignée (commande ${orderId})`,
         },
       });
 
@@ -189,5 +228,38 @@ export class DeliveriesService {
     return this.prisma.delivery.delete({ where: { id } }).catch(() => {
       throw new NotFoundException(`Delivery ${id} not found`);
     });
+  }
+
+  private async findAvailableDriver() {
+    const busyDeliveries = await this.prisma.delivery.findMany({
+      where: {
+        status: {
+          in: [
+            DeliveryStatus.ASSIGNED,
+            DeliveryStatus.PICKED_UP,
+            DeliveryStatus.IN_TRANSIT,
+          ],
+        },
+      },
+      select: { driverId: true },
+    });
+
+    const busyDriverIds = new Set(busyDeliveries.map((d) => d.driverId));
+
+    const availableProfiles = await this.prisma.driverProfile.findMany({
+      where: { isAvailable: true },
+      include: {
+        user: { select: { id: true, role: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    const candidate = availableProfiles.find(
+      (profile) =>
+        profile.user.role === UserRole.DRIVER &&
+        !busyDriverIds.has(profile.userId),
+    );
+
+    return candidate?.user ?? null;
   }
 }
