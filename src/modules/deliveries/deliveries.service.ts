@@ -7,6 +7,7 @@ import {
 import {
   Delivery,
   DeliveryStatus,
+  NotificationType,
   OrderStatus,
   UserRole,
 } from '@prisma/client';
@@ -72,6 +73,15 @@ export class DeliveriesService {
       await tx.order.update({
         where: { id: orderId },
         data: { status: OrderStatus.CONFIRMED },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: order.userId,
+          type: NotificationType.DELIVERY_STATUS,
+          title: 'Livreur assigné',
+          message: 'Un livreur a été assigné à votre commande',
+        },
       });
 
       return tx.delivery.create({
@@ -144,6 +154,21 @@ export class DeliveriesService {
       await tx.order.update({
         where: { id: delivery.orderId },
         data: { status: ORDER_STATUS_BY_DELIVERY[status] },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: delivery.order.userId,
+          type: NotificationType.DELIVERY_STATUS,
+          title:
+            status === DeliveryStatus.DELIVERED
+              ? 'Commande livrée'
+              : 'Suivi de livraison',
+          message:
+            status === DeliveryStatus.DELIVERED
+              ? 'Votre commande a été livrée. Bon appétit !'
+              : `Votre livraison est maintenant : ${status}`,
+        },
       });
 
       return tx.delivery.update({

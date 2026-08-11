@@ -59,6 +59,13 @@ enum PaymentStatus {
   CANCELLED
 }
 
+enum NotificationType {
+  ORDER_STATUS
+  DELIVERY_STATUS
+  PAYMENT
+  PROMOTIONAL
+}
+
 
 model User {
   id        String   @id @default(uuid())
@@ -77,6 +84,7 @@ model User {
   deliveries     Delivery[]
   driverProfile  DriverProfile?
   parcels        Parcel[]
+  notifications  Notification[]
   reviews        Review[]    @relation("ReviewAuthor")
   driverReviews  Review[]    @relation("ReviewDriver")
 
@@ -294,4 +302,25 @@ model Payment {
   updatedAt DateTime      @updatedAt
 
   @@index([status])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+
+  userId    String
+
+  type      NotificationType
+
+  title     String
+  message   String
+
+  readAt    DateTime?
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([userId, readAt])
+  @@index([createdAt])
 }
