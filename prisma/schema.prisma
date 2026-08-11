@@ -85,6 +85,7 @@ model User {
   driverProfile  DriverProfile?
   parcels        Parcel[]
   notifications  Notification[]
+  driverLocation DriverLocation?
   reviews        Review[]    @relation("ReviewAuthor")
   driverReviews  Review[]    @relation("ReviewDriver")
 
@@ -323,4 +324,21 @@ model Notification {
   @@index([userId])
   @@index([userId, readAt])
   @@index([createdAt])
+}
+
+model DriverLocation {
+  id        String   @id @default(uuid())
+
+  driverId  String   @unique
+
+  latitude  Float
+  longitude Float
+
+  deliveryId String?
+
+  driver    User     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
 }
