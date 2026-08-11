@@ -5,9 +5,12 @@ import {
   IsArray,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsOptional,
+  IsString,
   IsUUID,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -34,6 +37,24 @@ export class CreateOrderInput {
   @IsArray()
   @ArrayMinSize(1)
   items: CreateOrderItemInput[];
+
+  @Field()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  deliveryAddress: string;
+
+  @Field()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  deliveryCity: string;
+
+  @Field()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(20)
+  deliveryZipCode: string;
 
   @Field(() => PaymentMethod, {
     nullable: true,

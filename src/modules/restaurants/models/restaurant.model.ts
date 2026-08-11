@@ -33,6 +33,12 @@ export class RestaurantModel {
   rating: number;
 
   @Field()
+  deliveryFee: number;
+
+  @Field()
+  estimatedDeliveryTime: number;
+
+  @Field()
   createdAt: Date;
 
   @Field()
