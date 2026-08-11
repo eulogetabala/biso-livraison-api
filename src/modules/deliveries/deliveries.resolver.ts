@@ -44,6 +44,13 @@ export class DeliveriesResolver {
 
   @Mutation(() => DeliveryModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  assignAvailableDriver(@Args('orderId', { type: () => ID }) orderId: string) {
+    return this.deliveriesService.assignAvailableDriver(orderId);
+  }
+
+  @Mutation(() => DeliveryModel)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.DRIVER, UserRole.ADMIN)
   updateDeliveryStatus(
     @Args('input') input: UpdateDeliveryStatusInput,
