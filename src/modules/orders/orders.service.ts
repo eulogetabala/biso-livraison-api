@@ -7,6 +7,7 @@ import {
 import {
   Order,
   OrderStatus,
+  NotificationType,
   PaymentMethod,
   PaymentStatus,
   UserRole,
@@ -146,6 +147,15 @@ export class OrdersService {
           include: orderInclude,
         });
       }
+
+      await tx.notification.create({
+        data: {
+          userId: existing.userId,
+          type: NotificationType.ORDER_STATUS,
+          title: 'Statut de votre commande',
+          message: `Votre commande est passée au statut ${status}`,
+        },
+      });
 
       return updated;
     });
