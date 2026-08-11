@@ -28,14 +28,14 @@ export class StatisticsService {
       this.prisma.order.count(),
       this.prisma.order.aggregate({
         where: { status: { in: REVENUE_STATUSES } },
-        _sum: { total: true },
+        _sum: { grandTotal: true },
       }),
       this.prisma.restaurant.count({ where: { isActive: true } }),
       this.prisma.user.count({ where: { role: 'DRIVER' } }),
       this.prisma.order.count({ where: { status: OrderStatus.PENDING } }),
     ]);
 
-    const totalRevenue = revenueAgg._sum.total ?? 0;
+    const totalRevenue = revenueAgg._sum.grandTotal ?? 0;
 
     return {
       totalOrders,
@@ -56,9 +56,9 @@ export class StatisticsService {
     const rows = await this.prisma.order.groupBy({
       by: ['restaurantId'],
       where,
-      _sum: { total: true },
+      _sum: { grandTotal: true },
       _count: { _all: true },
-      orderBy: { _sum: { total: 'desc' } },
+      orderBy: { _sum: { grandTotal: 'desc' } },
     });
 
     const restaurants = await this.prisma.restaurant.findMany({
@@ -71,7 +71,7 @@ export class StatisticsService {
     return rows.map((row) => ({
       restaurantId: row.restaurantId,
       restaurantName: nameById.get(row.restaurantId) ?? 'Unknown',
-      revenue: row._sum.total ?? 0,
+      revenue: row._sum.grandTotal ?? 0,
       orderCount: row._count._all,
     }));
   }
@@ -97,7 +97,7 @@ export class StatisticsService {
 
     const orders = await this.prisma.order.findMany({
       where,
-      select: { createdAt: true, total: true, status: true },
+      select: { createdAt: true, grandTotal: true, status: true },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -108,7 +108,7 @@ export class StatisticsService {
       const entry = byDay.get(day) ?? { orders: 0, revenue: 0 };
       entry.orders += 1;
       if (REVENUE_STATUSES.includes(order.status)) {
-        entry.revenue += order.total;
+        entry.revenue += order.grandTotal;
       }
       byDay.set(day, entry);
     }
@@ -125,9 +125,9 @@ export class StatisticsService {
     const rows = await this.prisma.order.groupBy({
       by: ['restaurantId'],
       where: { status: { in: REVENUE_STATUSES } },
-      _sum: { total: true },
+      _sum: { grandTotal: true },
       _count: { _all: true },
-      orderBy: { _sum: { total: 'desc' } },
+      orderBy: { _sum: { grandTotal: 'desc' } },
       take: limit,
     });
 
@@ -141,7 +141,7 @@ export class StatisticsService {
     return rows.map((row) => ({
       restaurantId: row.restaurantId,
       restaurantName: nameById.get(row.restaurantId) ?? 'Unknown',
-      revenue: row._sum.total ?? 0,
+      revenue: row._sum.grandTotal ?? 0,
       orderCount: row._count._all,
     }));
   }

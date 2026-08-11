@@ -48,12 +48,20 @@ export class OrdersService {
       input.items,
     );
 
+    const deliveryFee = restaurant.deliveryFee ?? 0;
+    const grandTotal = totals.total + deliveryFee;
+
     const order = await this.prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
         data: {
           userId,
           restaurantId: input.restaurantId,
           total: totals.total,
+          deliveryAddress: input.deliveryAddress,
+          deliveryCity: input.deliveryCity,
+          deliveryZipCode: input.deliveryZipCode,
+          deliveryFee,
+          grandTotal,
           items: {
             create: menuItems.map((item) => ({
               menuItemId: item.id,
@@ -69,7 +77,7 @@ export class OrdersService {
         data: {
           orderId: created.id,
           method: input.paymentMethod ?? PaymentMethod.CASH_ON_DELIVERY,
-          amount: created.total,
+          amount: created.grandTotal,
         },
       });
 

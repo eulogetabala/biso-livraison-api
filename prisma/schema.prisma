@@ -125,6 +125,9 @@ model Restaurant {
   isActive    Boolean  @default(true)
   rating      Float    @default(0)
 
+  deliveryFee            Float @default(0)
+  estimatedDeliveryTime  Int   @default(30)
+
   menuItems   MenuItem[]
   orders      Order[]
   reviews     Review[]
@@ -162,6 +165,13 @@ model Order {
 
   status       OrderStatus @default(PENDING)
   total        Float       @default(0)
+
+  deliveryAddress  String @default("")
+  deliveryCity     String @default("")
+  deliveryZipCode  String @default("")
+
+  deliveryFee   Float       @default(0)
+  grandTotal    Float       @default(0)
 
   items        OrderItem[]
   review       Review?

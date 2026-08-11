@@ -50,6 +50,19 @@ export class CreateRestaurantInput {
   @IsNotEmpty()
   cuisineType: string;
 
+  @Field({ nullable: true, defaultValue: 0 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  deliveryFee?: number;
+
+  @Field({ nullable: true, defaultValue: 30 })
+  @IsOptional()
+  @IsNumber()
+  @Min(5)
+  @Max(180)
+  estimatedDeliveryTime?: number;
+
   @Field({ nullable: true })
   @IsOptional()
   @IsBoolean()

@@ -48,6 +48,21 @@ export class OrderModel {
   @Field()
   total: number;
 
+  @Field()
+  deliveryAddress: string;
+
+  @Field()
+  deliveryCity: string;
+
+  @Field()
+  deliveryZipCode: string;
+
+  @Field()
+  deliveryFee: number;
+
+  @Field()
+  grandTotal: number;
+
   @Field(() => [OrderItemModel])
   items: OrderItemModel[];
 
