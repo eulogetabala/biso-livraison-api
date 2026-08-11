@@ -15,6 +15,7 @@ import { DriversModule } from './modules/drivers/drivers.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
 import { ParcelsModule } from './modules/parcels/parcels.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { StatisticsModule } from './modules/statistics/statistics.module';
 import configuration, { AppConfig } from './config/configuration';
 
 @Module({
@@ -62,6 +63,7 @@ import configuration, { AppConfig } from './config/configuration';
     TrackingModule,
     ParcelsModule,
     PaymentsModule,
+    StatisticsModule,
   ],
 })
 export class AppModule {}
