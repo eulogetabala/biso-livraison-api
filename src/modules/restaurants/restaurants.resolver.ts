@@ -5,6 +5,7 @@ import { RestaurantsService } from './restaurants.service';
 import { RestaurantModel } from './models/restaurant.model';
 import { CreateRestaurantInput } from './dto/create-restaurant.input';
 import { UpdateRestaurantInput } from './dto/update-restaurant.input';
+import { SearchRestaurantsInput } from './dto/search-restaurants.input';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -12,6 +13,13 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @Resolver(() => RestaurantModel)
 export class RestaurantsResolver {
   constructor(private readonly restaurantsService: RestaurantsService) {}
+
+  @Query(() => [RestaurantModel])
+  searchRestaurants(
+    @Args('input', { nullable: true }) input?: SearchRestaurantsInput,
+  ) {
+    return this.restaurantsService.search(input);
+  }
 
   @Query(() => [RestaurantModel])
   restaurants() {

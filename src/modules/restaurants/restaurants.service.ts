@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Restaurant } from '@prisma/client';
+import { Prisma, Restaurant } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateRestaurantInput } from './dto/create-restaurant.input';
 import { UpdateRestaurantInput } from './dto/update-restaurant.input';
+import { SearchRestaurantsInput } from './dto/search-restaurants.input';
 
 @Injectable()
 export class RestaurantsService {
@@ -10,6 +11,41 @@ export class RestaurantsService {
 
   create(data: CreateRestaurantInput): Promise<Restaurant> {
     return this.prisma.restaurant.create({ data });
+  }
+
+  search(input: SearchRestaurantsInput = {}): Promise<Restaurant[]> {
+    const where: Prisma.RestaurantWhereInput = {};
+
+    if (input.onlyActive !== false) {
+      where.isActive = true;
+    }
+
+    if (input.city) {
+      where.city = { equals: input.city, mode: 'insensitive' };
+    }
+
+    if (input.cuisineType) {
+      where.cuisineType = { equals: input.cuisineType, mode: 'insensitive' };
+    }
+
+    if (input.minRating !== undefined) {
+      where.rating = { gte: input.minRating };
+    }
+
+    if (input.query) {
+      const q = { contains: input.query, mode: 'insensitive' as const };
+      where.OR = [
+        { name: q },
+        { description: q },
+        { cuisineType: q },
+        { city: q },
+      ];
+    }
+
+    return this.prisma.restaurant.findMany({
+      where,
+      orderBy: [{ rating: 'desc' }, { name: 'asc' }],
+    });
   }
 
   findAll(): Promise<Restaurant[]> {

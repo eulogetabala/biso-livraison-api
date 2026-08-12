@@ -5,6 +5,7 @@ import { MenusService } from './menus.service';
 import { MenuItemModel } from './models/menu-item.model';
 import { CreateMenuItemInput } from './dto/create-menu-item.input';
 import { UpdateMenuItemInput } from './dto/update-menu-item.input';
+import { SearchMenuItemsInput } from './dto/search-menu-items.input';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -12,6 +13,13 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @Resolver(() => MenuItemModel)
 export class MenusResolver {
   constructor(private readonly menusService: MenusService) {}
+
+  @Query(() => [MenuItemModel])
+  searchMenuItems(
+    @Args('input', { nullable: true }) input?: SearchMenuItemsInput,
+  ) {
+    return this.menusService.search(input);
+  }
 
   @Query(() => [MenuItemModel])
   menuItems() {
