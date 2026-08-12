@@ -25,6 +25,7 @@ const orderInclude = {
   user: true,
   restaurant: true,
   payment: true,
+  delivery: { include: { driver: true } },
 } as const;
 
 @Injectable()

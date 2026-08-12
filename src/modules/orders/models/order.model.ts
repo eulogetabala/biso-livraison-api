@@ -4,6 +4,7 @@ import { UserModel } from '../../users/models/user.model';
 import { RestaurantModel } from '../../restaurants/models/restaurant.model';
 import { MenuItemModel } from '../../menus/models/menu-item.model';
 import { PaymentModel } from '../../payments/models/payment.model';
+import { DeliveryModel } from '../../deliveries/models/delivery.model';
 
 registerEnumType(OrderStatus, {
   name: 'OrderStatus',
@@ -74,6 +75,9 @@ export class OrderModel {
 
   @Field(() => PaymentModel, { nullable: true })
   payment?: PaymentModel;
+
+  @Field(() => DeliveryModel, { nullable: true })
+  delivery?: DeliveryModel;
 
   @Field()
   createdAt: Date;
