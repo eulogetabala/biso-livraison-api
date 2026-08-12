@@ -53,6 +53,15 @@ export class OrdersResolver {
   }
 
   @Mutation(() => OrderModel)
+  @UseGuards(JwtAuthGuard)
+  cancelOrder(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.ordersService.cancelByClient(id, user);
+  }
+
+  @Mutation(() => OrderModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   deleteOrder(@Args('id', { type: () => ID }) id: string) {

@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  DeliveryStatus,
   Order,
   OrderStatus,
   NotificationType,
@@ -166,6 +167,69 @@ export class OrdersService {
       });
 
       return updated;
+    });
+  }
+
+  async cancelByClient(id: string, currentUser: CurrentUser): Promise<Order> {
+    const existing = await this.prisma.order.findUnique({
+      where: { id },
+      include: { delivery: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`Order ${id} not found`);
+    }
+
+    if (
+      existing.userId !== currentUser.id &&
+      currentUser.role !== UserRole.ADMIN
+    ) {
+      throw new ForbiddenException('You cannot cancel this order');
+    }
+
+    if (existing.status === OrderStatus.CANCELLED) {
+      throw new BadRequestException('This order is already cancelled');
+    }
+
+    const deliveryStarted =
+      existing.delivery && existing.delivery.status !== DeliveryStatus.ASSIGNED;
+
+    const CANCELLABLE_STATUSES: OrderStatus[] = [
+      OrderStatus.PENDING,
+      OrderStatus.CONFIRMED,
+    ];
+
+    const canCancel =
+      CANCELLABLE_STATUSES.includes(existing.status) && !deliveryStarted;
+
+    if (!canCancel) {
+      const reason =
+        existing.status === OrderStatus.DELIVERED
+          ? 'This order has already been delivered'
+          : 'This order can no longer be cancelled: the delivery is in progress';
+      throw new BadRequestException(reason);
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.payment.updateMany({
+        where: { orderId: id, status: PaymentStatus.PENDING },
+        data: { status: PaymentStatus.CANCELLED },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: existing.userId,
+          type: NotificationType.ORDER_STATUS,
+          title: 'Commande annulée',
+          message: 'Votre commande a été annulée',
+        },
+      });
+
+      return tx.order.update({
+        where: { id },
+        data: { status: OrderStatus.CANCELLED },
+        include: orderInclude,
+      });
     });
   }
 
