@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { MenuItem } from '@prisma/client';
+import { MenuItem, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMenuItemInput } from './dto/create-menu-item.input';
 import { UpdateMenuItemInput } from './dto/update-menu-item.input';
+import { SearchMenuItemsInput } from './dto/search-menu-items.input';
 
 @Injectable()
 export class MenusService {
@@ -10,6 +11,33 @@ export class MenusService {
 
   create(data: CreateMenuItemInput): Promise<MenuItem> {
     return this.prisma.menuItem.create({ data });
+  }
+
+  search(input: SearchMenuItemsInput = {}): Promise<MenuItem[]> {
+    const where: Prisma.MenuItemWhereInput = {};
+
+    if (input.restaurantId) {
+      where.restaurantId = input.restaurantId;
+    }
+
+    if (input.category) {
+      where.category = input.category;
+    }
+
+    if (input.onlyAvailable !== false) {
+      where.isAvailable = true;
+    }
+
+    if (input.query) {
+      const q = { contains: input.query, mode: 'insensitive' as const };
+      where.OR = [{ name: q }, { description: q }];
+    }
+
+    return this.prisma.menuItem.findMany({
+      where,
+      include: { restaurant: true },
+      orderBy: { name: 'asc' },
+    });
   }
 
   findAll(): Promise<MenuItem[]> {
