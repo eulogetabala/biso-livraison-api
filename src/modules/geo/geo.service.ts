@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DriverLocation } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateDriverLocationInput } from './dto/update-driver-location.input';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Injectable()
 export class GeoService {
@@ -39,6 +44,32 @@ export class GeoService {
     }
 
     return location;
+  }
+
+  async trackDelivery(orderId: string, currentUser: CurrentUser) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { userId: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order ${orderId} not found`);
+    }
+
+    if (order.userId !== currentUser.id && currentUser.role !== 'ADMIN') {
+      throw new ForbiddenException('You cannot track this order');
+    }
+
+    const delivery = await this.prisma.delivery.findUnique({
+      where: { orderId },
+      select: { driverId: true },
+    });
+
+    if (!delivery?.driverId) {
+      throw new NotFoundException(`No driver assigned to order ${orderId} yet`);
+    }
+
+    return this.getLocation(delivery.driverId);
   }
 
   getAllLocations(): Promise<DriverLocation[]> {
