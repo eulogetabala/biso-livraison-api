@@ -34,6 +34,15 @@ export class GeoResolver {
   }
 
   @Query(() => DriverLocationModel)
+  @UseGuards(JwtAuthGuard)
+  trackDelivery(
+    @Args('orderId', { type: () => ID }) orderId: string,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.geoService.trackDelivery(orderId, user);
+  }
+
+  @Query(() => DriverLocationModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
   driverLocation(@Args('driverId', { type: () => ID }) driverId: string) {
