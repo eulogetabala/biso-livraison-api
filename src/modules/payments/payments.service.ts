@@ -4,21 +4,31 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { OrderStatus, PaymentStatus, UserRole } from '@prisma/client';
+import {
+  NotificationType,
+  OrderStatus,
+  PaymentStatus,
+  UserRole,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { MailService } from '../mail/mail.service';
 
 const paymentInclude = {
   order: {
     include: {
       delivery: true,
+      user: true,
     },
   },
 } as const;
 
 @Injectable()
 export class PaymentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   findAll() {
     return this.prisma.payment.findMany({
@@ -79,13 +89,36 @@ export class PaymentsService {
       );
     }
 
-    return this.prisma.payment.update({
-      where: { orderId },
-      data: {
-        status: PaymentStatus.PAID,
-        paidAt: new Date(),
-      },
-      include: paymentInclude,
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const paid = await tx.payment.update({
+        where: { orderId },
+        data: {
+          status: PaymentStatus.PAID,
+          paidAt: new Date(),
+        },
+        include: paymentInclude,
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: payment.order.userId,
+          type: NotificationType.PAYMENT,
+          title: 'Paiement encaissé',
+          message: `Paiement de ${paid.amount.toFixed(2)} € encaissé à la livraison. Merci !`,
+        },
+      });
+
+      return paid;
     });
+
+    void this.mailService.sendNotification(
+      payment.order.user?.email ?? '',
+      'PAYMENT',
+      'Paiement encaissé',
+      `Le paiement de ${updated.amount.toFixed(2)} € a bien été encaissé à la livraison. Merci pour votre confiance !`,
+      { orderId, amount: updated.amount },
+    );
+
+    return updated;
   }
 }

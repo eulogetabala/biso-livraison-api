@@ -13,9 +13,15 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { MailService } from '../mail/mail.service';
 
 const deliveryInclude = {
-  order: { include: { items: { include: { menuItem: true } } } },
+  order: {
+    include: {
+      items: { include: { menuItem: true } },
+      user: true,
+    },
+  },
   driver: true,
 } as const;
 
@@ -38,7 +44,10 @@ const ORDER_STATUS_BY_DELIVERY: Record<DeliveryStatus, OrderStatus> = {
 
 @Injectable()
 export class DeliveriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   async assignAvailableDriver(orderId: string): Promise<Delivery> {
     const order = await this.prisma.order.findUnique({
@@ -75,7 +84,7 @@ export class DeliveriesService {
       this.prisma.user.findUnique({ where: { id: driverId } }),
       this.prisma.order.findUnique({
         where: { id: orderId },
-        include: { delivery: true },
+        include: { delivery: true, user: true },
       }),
     ]);
 
@@ -99,7 +108,7 @@ export class DeliveriesService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const delivery = await this.prisma.$transaction(async (tx) => {
       await tx.order.update({
         where: { id: orderId },
         data: { status: OrderStatus.CONFIRMED },
@@ -132,6 +141,24 @@ export class DeliveriesService {
         include: deliveryInclude,
       });
     });
+
+    void this.mailService.sendNotification(
+      order.user?.email ?? '',
+      'DELIVERY',
+      'Un livreur a été assigné',
+      'Un livreur est en route pour récupérer votre commande.',
+      { orderId },
+    );
+
+    void this.mailService.sendNotification(
+      driver.email,
+      'DELIVERY',
+      'Nouvelle livraison assignée',
+      `Une nouvelle livraison vous a été assignée pour la commande ${orderId}.`,
+      { orderId },
+    );
+
+    return delivery;
   }
 
   findAll(): Promise<Delivery[]> {
@@ -189,7 +216,7 @@ export class DeliveriesService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       await tx.order.update({
         where: { id: delivery.orderId },
         data: { status: ORDER_STATUS_BY_DELIVERY[status] },
@@ -222,6 +249,20 @@ export class DeliveriesService {
         include: deliveryInclude,
       });
     });
+
+    void this.mailService.sendNotification(
+      delivery.order.user?.email ?? '',
+      'DELIVERY',
+      status === DeliveryStatus.DELIVERED
+        ? 'Commande livrée 🎉'
+        : `Livraison ${status.toLowerCase().replace('_', ' ')}`,
+      status === DeliveryStatus.DELIVERED
+        ? 'Votre commande a été livrée. Bon appétit !'
+        : `Votre livraison est maintenant : ${status}.`,
+      { orderId: delivery.orderId },
+    );
+
+    return updated;
   }
 
   remove(id: string): Promise<Delivery> {

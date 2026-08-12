@@ -19,6 +19,7 @@ import {
   CreateOrderItemInput,
 } from './dto/create-order.input';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { MailService } from '../mail/mail.service';
 
 const orderInclude = {
   items: { include: { menuItem: true } },
@@ -30,7 +31,10 @@ const orderInclude = {
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   async create(input: CreateOrderInput, userId: string): Promise<Order> {
     const restaurant = await this.prisma.restaurant.findUnique({
@@ -89,6 +93,15 @@ export class OrdersService {
       });
     });
 
+    void this.mailService.sendNotification(
+      order.user?.email ?? '',
+      'ORDER',
+      'Commande confirmée',
+      `Votre commande chez ${order.restaurant?.name ?? 'le restaurant'} est bien reçue. ` +
+        `Montant total : ${order.grandTotal.toFixed(2)} € (paiement à la livraison).`,
+      { orderId: order.id, amount: order.grandTotal },
+    );
+
     return order;
   }
 
@@ -129,7 +142,10 @@ export class OrdersService {
   }
 
   async updateStatus(id: string, status: OrderStatus): Promise<Order> {
-    const existing = await this.prisma.order.findUnique({ where: { id } });
+    const existing = await this.prisma.order.findUnique({
+      where: { id },
+      include: { user: true },
+    });
 
     if (!existing) {
       throw new NotFoundException(`Order ${id} not found`);
@@ -139,7 +155,7 @@ export class OrdersService {
       throw new BadRequestException('A cancelled order cannot be updated');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
         where: { id },
         data: { status },
@@ -169,12 +185,32 @@ export class OrdersService {
 
       return updated;
     });
+
+    if (status === OrderStatus.CANCELLED) {
+      void this.mailService.sendNotification(
+        existing.user?.email ?? '',
+        'ORDER',
+        'Commande annulée',
+        'Votre commande a été annulée. Aucun montant n’a été encaissé.',
+        { orderId: id },
+      );
+    } else {
+      void this.mailService.sendNotification(
+        existing.user?.email ?? '',
+        'ORDER',
+        `Commande ${status.toLowerCase()}`,
+        `Votre commande est passée au statut : ${status}.`,
+        { orderId: id },
+      );
+    }
+
+    return order;
   }
 
   async cancelByClient(id: string, currentUser: CurrentUser): Promise<Order> {
     const existing = await this.prisma.order.findUnique({
       where: { id },
-      include: { delivery: true },
+      include: { delivery: true, user: true },
     });
 
     if (!existing) {
@@ -211,7 +247,7 @@ export class OrdersService {
       throw new BadRequestException(reason);
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.$transaction(async (tx) => {
       await tx.payment.updateMany({
         where: { orderId: id, status: PaymentStatus.PENDING },
         data: { status: PaymentStatus.CANCELLED },
@@ -232,6 +268,16 @@ export class OrdersService {
         include: orderInclude,
       });
     });
+
+    void this.mailService.sendNotification(
+      existing.user?.email ?? '',
+      'ORDER',
+      'Commande annulée',
+      'Votre commande a été annulée. Aucun montant n’a été encaissé.',
+      { orderId: id },
+    );
+
+    return order;
   }
 
   remove(id: string): Promise<Order> {

@@ -19,6 +19,14 @@ export interface AppConfig {
     refreshSecret: string;
     expiresIn: JwtExpiresIn;
   };
+  mail: {
+    host: string;
+    port: number;
+    secure: boolean;
+    user: string;
+    pass: string;
+    from: string;
+  };
   redis: {
     url: string;
   };
@@ -51,6 +59,14 @@ export default (): AppConfig => {
       secret: jwtSecret,
       refreshSecret: process.env.JWT_REFRESH_SECRET ?? '',
       expiresIn: (process.env.JWT_EXPIRES_IN ?? '15m') as JwtExpiresIn,
+    },
+    mail: {
+      host: process.env.SMTP_HOST ?? '',
+      port: parseInt(process.env.SMTP_PORT ?? '587', 10),
+      secure: (process.env.SMTP_SECURE ?? 'false') === 'true',
+      user: process.env.SMTP_USER ?? '',
+      pass: process.env.SMTP_PASS ?? '',
+      from: process.env.MAIL_FROM ?? 'no-reply@biso-livraison.app',
     },
     redis: {
       url: process.env.REDIS_URL ?? 'redis://localhost:6379',
