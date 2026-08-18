@@ -38,6 +38,11 @@ export class CreateMenuItemInput {
 
   @Field({ nullable: true })
   @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
   @IsBoolean()
   isAvailable?: boolean;
 }

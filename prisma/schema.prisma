@@ -78,6 +78,8 @@ model User {
 
   phone     String
 
+  avatarUrl String?
+
   role      UserRole @default(CLIENT)
 
   orders         Order[]
@@ -125,6 +127,9 @@ model Restaurant {
   phone       String
   cuisineType String
 
+  imageUrl     String?
+  coverImageUrl String?
+
   isActive    Boolean  @default(true)
   rating      Float    @default(0)
 
@@ -148,6 +153,8 @@ model MenuItem {
   description  String?
   price        Float
   category     MenuItemCategory
+
+  imageUrl    String?
 
   isAvailable  Boolean  @default(true)
 

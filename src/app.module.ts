@@ -19,6 +19,7 @@ import { StatisticsModule } from './modules/statistics/statistics.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { GeoModule } from './modules/geo/geo.module';
 import { MailModule } from './modules/mail/mail.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 import configuration, { AppConfig } from './config/configuration';
 
 @Module({
@@ -70,6 +71,7 @@ import configuration, { AppConfig } from './config/configuration';
     NotificationsModule,
     GeoModule,
     MailModule,
+    UploadsModule,
   ],
 })
 export class AppModule {}

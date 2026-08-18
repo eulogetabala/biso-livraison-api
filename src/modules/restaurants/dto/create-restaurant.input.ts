@@ -50,6 +50,16 @@ export class CreateRestaurantInput {
   @IsNotEmpty()
   cuisineType: string;
 
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string;
+
   @Field({ nullable: true, defaultValue: 0 })
   @IsOptional()
   @IsNumber()

@@ -18,6 +18,9 @@ export class UserModel {
   @Field()
   phone: string;
 
+  @Field({ nullable: true })
+  avatarUrl?: string;
+
   @Field(() => String)
   role: UserRole;
 
