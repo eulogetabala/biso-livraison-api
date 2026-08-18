@@ -14,6 +14,8 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { MailService } from '../mail/mail.service';
+import { PaginationArgs } from '../../common/dto/pagination.args';
+import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
 
 const deliveryInclude = {
   order: {
@@ -161,19 +163,38 @@ export class DeliveriesService {
     return delivery;
   }
 
-  findAll(): Promise<Delivery[]> {
-    return this.prisma.delivery.findMany({
-      include: deliveryInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+  findAll(pagination: PaginationArgs): Promise<PaginatedResult<Delivery>> {
+    return paginate(
+      (args) =>
+        this.prisma.delivery.findMany({
+          include: deliveryInclude,
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.delivery.count(),
+      pagination,
+    );
   }
 
-  myDeliveries(driverId: string): Promise<Delivery[]> {
-    return this.prisma.delivery.findMany({
-      where: { driverId },
-      include: deliveryInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+  myDeliveries(
+    driverId: string,
+    pagination: PaginationArgs,
+  ): Promise<PaginatedResult<Delivery>> {
+    const where = { driverId };
+
+    return paginate(
+      (args) =>
+        this.prisma.delivery.findMany({
+          where,
+          include: deliveryInclude,
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.delivery.count({ where }),
+      pagination,
+    );
   }
 
   findByOrder(orderId: string): Promise<Delivery> {

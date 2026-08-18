@@ -4,6 +4,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateRestaurantInput } from './dto/create-restaurant.input';
 import { UpdateRestaurantInput } from './dto/update-restaurant.input';
 import { SearchRestaurantsInput } from './dto/search-restaurants.input';
+import { PaginationArgs } from '../../common/dto/pagination.args';
+import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class RestaurantsService {
@@ -13,7 +15,10 @@ export class RestaurantsService {
     return this.prisma.restaurant.create({ data });
   }
 
-  search(input: SearchRestaurantsInput = {}): Promise<Restaurant[]> {
+  search(
+    input: SearchRestaurantsInput = {},
+    pagination: PaginationArgs,
+  ): Promise<PaginatedResult<Restaurant>> {
     const where: Prisma.RestaurantWhereInput = {};
 
     if (input.onlyActive !== false) {
@@ -42,16 +47,30 @@ export class RestaurantsService {
       ];
     }
 
-    return this.prisma.restaurant.findMany({
-      where,
-      orderBy: [{ rating: 'desc' }, { name: 'asc' }],
-    });
+    return paginate(
+      (args) =>
+        this.prisma.restaurant.findMany({
+          where,
+          orderBy: [{ rating: 'desc' }, { name: 'asc' }],
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.restaurant.count({ where }),
+      pagination,
+    );
   }
 
-  findAll(): Promise<Restaurant[]> {
-    return this.prisma.restaurant.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+  findAll(pagination: PaginationArgs): Promise<PaginatedResult<Restaurant>> {
+    return paginate(
+      (args) =>
+        this.prisma.restaurant.findMany({
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.restaurant.count(),
+      pagination,
+    );
   }
 
   findOne(id: string): Promise<Restaurant> {

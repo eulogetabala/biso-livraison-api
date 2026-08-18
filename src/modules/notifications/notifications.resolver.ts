@@ -2,7 +2,9 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { NotificationsService } from './notifications.service';
 import { NotificationModel } from './models/notification.model';
+import { PaginatedNotificationModel } from './models/paginated-notification.model';
 import { MarkNotificationReadInput } from './dto/mark-notification-read.input';
+import { PaginationArgs } from '../../common/dto/pagination.args';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -10,10 +12,13 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class NotificationsResolver {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Query(() => [NotificationModel])
+  @Query(() => PaginatedNotificationModel)
   @UseGuards(JwtAuthGuard)
-  myNotifications(@CurrentUser() user: CurrentUser) {
-    return this.notificationsService.myNotifications(user.id);
+  myNotifications(
+    @Args() pagination: PaginationArgs,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.notificationsService.myNotifications(user.id, pagination);
   }
 
   @Query(() => Int)

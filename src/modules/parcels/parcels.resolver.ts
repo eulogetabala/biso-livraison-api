@@ -3,8 +3,10 @@ import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { ParcelsService } from './parcels.service';
 import { ParcelModel } from './models/parcel.model';
+import { PaginatedParcelModel } from './models/paginated-parcel.model';
 import { CreateParcelInput } from './dto/create-parcel.input';
 import { UpdateParcelStatusInput } from './dto/update-parcel-status.input';
+import { PaginationArgs } from '../../common/dto/pagination.args';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -14,17 +16,20 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class ParcelsResolver {
   constructor(private readonly parcelsService: ParcelsService) {}
 
-  @Query(() => [ParcelModel])
+  @Query(() => PaginatedParcelModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
-  parcels() {
-    return this.parcelsService.findAll();
+  parcels(@Args() pagination: PaginationArgs) {
+    return this.parcelsService.findAll(pagination);
   }
 
-  @Query(() => [ParcelModel])
+  @Query(() => PaginatedParcelModel)
   @UseGuards(JwtAuthGuard)
-  myParcels(@CurrentUser() user: CurrentUser) {
-    return this.parcelsService.myParcels(user.id);
+  myParcels(
+    @Args() pagination: PaginationArgs,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.parcelsService.myParcels(user.id, pagination);
   }
 
   @Query(() => ParcelModel)

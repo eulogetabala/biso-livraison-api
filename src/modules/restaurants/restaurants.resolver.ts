@@ -3,9 +3,11 @@ import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { RestaurantsService } from './restaurants.service';
 import { RestaurantModel } from './models/restaurant.model';
+import { PaginatedRestaurantModel } from './models/paginated-restaurant.model';
 import { CreateRestaurantInput } from './dto/create-restaurant.input';
 import { UpdateRestaurantInput } from './dto/update-restaurant.input';
 import { SearchRestaurantsInput } from './dto/search-restaurants.input';
+import { PaginationArgs } from '../../common/dto/pagination.args';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -14,16 +16,17 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class RestaurantsResolver {
   constructor(private readonly restaurantsService: RestaurantsService) {}
 
-  @Query(() => [RestaurantModel])
+  @Query(() => PaginatedRestaurantModel)
   searchRestaurants(
+    @Args() pagination: PaginationArgs,
     @Args('input', { nullable: true }) input?: SearchRestaurantsInput,
   ) {
-    return this.restaurantsService.search(input);
+    return this.restaurantsService.search(input, pagination);
   }
 
-  @Query(() => [RestaurantModel])
-  restaurants() {
-    return this.restaurantsService.findAll();
+  @Query(() => PaginatedRestaurantModel)
+  restaurants(@Args() pagination: PaginationArgs) {
+    return this.restaurantsService.findAll(pagination);
   }
 
   @Query(() => RestaurantModel)

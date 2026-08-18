@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Notification, NotificationType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PaginationArgs } from '../../common/dto/pagination.args';
+import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class NotificationsService {
@@ -17,11 +19,23 @@ export class NotificationsService {
     });
   }
 
-  myNotifications(userId: string): Promise<Notification[]> {
-    return this.prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-    });
+  myNotifications(
+    userId: string,
+    pagination: PaginationArgs,
+  ): Promise<PaginatedResult<Notification>> {
+    const where = { userId };
+
+    return paginate(
+      (args) =>
+        this.prisma.notification.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.notification.count({ where }),
+      pagination,
+    );
   }
 
   unreadCount(userId: string): Promise<number> {

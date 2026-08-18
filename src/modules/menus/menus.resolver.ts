@@ -3,9 +3,11 @@ import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { MenusService } from './menus.service';
 import { MenuItemModel } from './models/menu-item.model';
+import { PaginatedMenuItemModel } from './models/paginated-menu-item.model';
 import { CreateMenuItemInput } from './dto/create-menu-item.input';
 import { UpdateMenuItemInput } from './dto/update-menu-item.input';
 import { SearchMenuItemsInput } from './dto/search-menu-items.input';
+import { PaginationArgs } from '../../common/dto/pagination.args';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -14,23 +16,25 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class MenusResolver {
   constructor(private readonly menusService: MenusService) {}
 
-  @Query(() => [MenuItemModel])
+  @Query(() => PaginatedMenuItemModel)
   searchMenuItems(
+    @Args() pagination: PaginationArgs,
     @Args('input', { nullable: true }) input?: SearchMenuItemsInput,
   ) {
-    return this.menusService.search(input);
+    return this.menusService.search(input, pagination);
   }
 
-  @Query(() => [MenuItemModel])
-  menuItems() {
-    return this.menusService.findAll();
+  @Query(() => PaginatedMenuItemModel)
+  menuItems(@Args() pagination: PaginationArgs) {
+    return this.menusService.findAll(pagination);
   }
 
-  @Query(() => [MenuItemModel])
+  @Query(() => PaginatedMenuItemModel)
   menuItemsByRestaurant(
     @Args('restaurantId', { type: () => ID }) restaurantId: string,
+    @Args() pagination: PaginationArgs,
   ) {
-    return this.menusService.findByRestaurant(restaurantId);
+    return this.menusService.findByRestaurant(restaurantId, pagination);
   }
 
   @Query(() => MenuItemModel)
