@@ -21,14 +21,9 @@ export class ReviewsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateReviewInput, userId: string): Promise<Review> {
-    if (!data.restaurantId && !data.driverId) {
-      throw new BadRequestException(
-        'You must review at least a restaurant or a driver',
-      );
-    }
-
     const order = await this.prisma.order.findUnique({
       where: { id: data.orderId },
+      include: { delivery: true },
     });
 
     if (!order) {
@@ -53,18 +48,32 @@ export class ReviewsService {
       throw new BadRequestException('This order has already been reviewed');
     }
 
+    // Le restaurant et le livreur sont déduits de la commande si non fournis,
+    // pour que le client puisse noter sans avoir à connaître les IDs.
+    const restaurantId = data.restaurantId ?? order.restaurantId;
+    const driverId = data.driverId ?? order.delivery?.driverId ?? null;
+
     if (data.restaurantId && data.restaurantId !== order.restaurantId) {
       throw new BadRequestException(
         'The restaurant must match the one from the order',
       );
     }
 
+    if (driverId) {
+      const deliveryDriverId = order.delivery?.driverId ?? null;
+      if (data.driverId && data.driverId !== deliveryDriverId) {
+        throw new BadRequestException(
+          'The driver must be the one assigned to this order',
+        );
+      }
+    }
+
     const review = await this.prisma.review.create({
       data: {
         orderId: order.id,
         userId,
-        restaurantId: data.restaurantId,
-        driverId: data.driverId,
+        restaurantId,
+        driverId,
         rating: data.rating,
         comment: data.comment,
       },
@@ -75,11 +84,23 @@ export class ReviewsService {
       await this.recomputeRestaurantRating(review.restaurantId);
     }
 
+    if (review.driverId) {
+      await this.recomputeDriverRating(review.driverId);
+    }
+
     return review;
   }
 
   findAll(): Promise<Review[]> {
     return this.prisma.review.findMany({
+      include: reviewInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  myReviews(userId: string): Promise<Review[]> {
+    return this.prisma.review.findMany({
+      where: { userId },
       include: reviewInclude,
       orderBy: { createdAt: 'desc' },
     });
@@ -145,6 +166,10 @@ export class ReviewsService {
       await this.recomputeRestaurantRating(updated.restaurantId);
     }
 
+    if (updated.driverId) {
+      await this.recomputeDriverRating(updated.driverId);
+    }
+
     return updated;
   }
 
@@ -168,6 +193,10 @@ export class ReviewsService {
       await this.recomputeRestaurantRating(review.restaurantId);
     }
 
+    if (review.driverId) {
+      await this.recomputeDriverRating(review.driverId);
+    }
+
     return review;
   }
 
@@ -182,6 +211,22 @@ export class ReviewsService {
       where: { id: restaurantId },
       data: {
         rating: Math.round((result._avg.rating ?? 0) * 10) / 10,
+      },
+    });
+  }
+
+  private async recomputeDriverRating(driverId: string) {
+    const result = await this.prisma.review.aggregate({
+      where: { driverId },
+      _avg: { rating: true },
+      _count: true,
+    });
+
+    await this.prisma.driverProfile.update({
+      where: { userId: driverId },
+      data: {
+        rating: Math.round((result._avg.rating ?? 0) * 10) / 10,
+        reviewCount: result._count,
       },
     });
   }
