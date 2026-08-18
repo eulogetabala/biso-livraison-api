@@ -9,6 +9,10 @@ export interface LoginResult {
   user: {
     id: string;
     email: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    avatarUrl: string | null;
     role: string;
   };
 }
@@ -36,6 +40,10 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        avatarUrl: user.avatarUrl,
         role: user.role,
       },
     };
