@@ -22,6 +22,12 @@ export class ReviewsResolver {
   }
 
   @Query(() => [ReviewModel])
+  @UseGuards(JwtAuthGuard)
+  myReviews(@CurrentUser() user: CurrentUser) {
+    return this.reviewsService.myReviews(user.id);
+  }
+
+  @Query(() => [ReviewModel])
   reviewsByRestaurant(
     @Args('restaurantId', { type: () => ID }) restaurantId: string,
   ) {

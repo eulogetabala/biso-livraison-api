@@ -103,6 +103,9 @@ model DriverProfile {
 
   isAvailable  Boolean @default(false)
 
+  rating      Float @default(0)
+  reviewCount Int   @default(0)
+
   user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt    DateTime @default(now())
