@@ -4,6 +4,7 @@ import { UserRole } from '@prisma/client';
 import { UsersService } from './users.service';
 import { UserModel } from './models/user.model';
 import { CreateUserInput } from './dto/create-user.input';
+import { UpdateProfileInput } from './dto/update-profile.input';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -24,6 +25,15 @@ export class UsersResolver {
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: { id: string; email: string; role: string }) {
     return this.usersService.findById(user.id);
+  }
+
+  @Mutation(() => UserModel)
+  @UseGuards(JwtAuthGuard)
+  updateProfile(
+    @Args('input') input: UpdateProfileInput,
+    @CurrentUser() user: { id: string; email: string; role: string },
+  ) {
+    return this.usersService.updateProfile(user.id, input);
   }
 
   @Mutation(() => UserModel)

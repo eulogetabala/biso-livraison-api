@@ -35,6 +35,10 @@ export interface AppConfig {
     clientEmail: string;
     privateKey: string;
   };
+  uploads: {
+    directory: string;
+    publicUrl: string;
+  };
 }
 
 export default (): AppConfig => {
@@ -75,6 +79,10 @@ export default (): AppConfig => {
       projectId: process.env.FIREBASE_PROJECT_ID ?? '',
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL ?? '',
       privateKey: process.env.FIREBASE_PRIVATE_KEY ?? '',
+    },
+    uploads: {
+      directory: process.env.UPLOAD_DIR ?? 'public/uploads',
+      publicUrl: process.env.PUBLIC_UPLOAD_URL ?? '/uploads',
     },
   };
 };

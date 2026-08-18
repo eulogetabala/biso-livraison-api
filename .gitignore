@@ -22,6 +22,9 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Uploaded files (keep out of version control)
+public/uploads
+
 # Editor / tooling
 .idea
 .vscode/*

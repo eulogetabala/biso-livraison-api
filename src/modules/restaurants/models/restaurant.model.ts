@@ -26,6 +26,12 @@ export class RestaurantModel {
   @Field()
   cuisineType: string;
 
+  @Field({ nullable: true })
+  imageUrl?: string;
+
+  @Field({ nullable: true })
+  coverImageUrl?: string;
+
   @Field()
   isActive: boolean;
 

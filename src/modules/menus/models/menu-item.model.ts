@@ -27,6 +27,9 @@ export class MenuItemModel {
   @Field(() => MenuItemCategory)
   category: MenuItemCategory;
 
+  @Field({ nullable: true })
+  imageUrl?: string;
+
   @Field()
   isAvailable: boolean;
 
