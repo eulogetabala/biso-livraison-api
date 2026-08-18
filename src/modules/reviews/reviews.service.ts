@@ -8,6 +8,8 @@ import { OrderStatus, Review, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateReviewInput } from './dto/create-review.input';
+import { PaginationArgs } from '../../common/dto/pagination.args';
+import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
 
 const reviewInclude = {
   order: true,
@@ -91,35 +93,78 @@ export class ReviewsService {
     return review;
   }
 
-  findAll(): Promise<Review[]> {
-    return this.prisma.review.findMany({
-      include: reviewInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+  findAll(pagination: PaginationArgs): Promise<PaginatedResult<Review>> {
+    return paginate(
+      (args) =>
+        this.prisma.review.findMany({
+          include: reviewInclude,
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.review.count(),
+      pagination,
+    );
   }
 
-  myReviews(userId: string): Promise<Review[]> {
-    return this.prisma.review.findMany({
-      where: { userId },
-      include: reviewInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+  myReviews(
+    userId: string,
+    pagination: PaginationArgs,
+  ): Promise<PaginatedResult<Review>> {
+    const where = { userId };
+
+    return paginate(
+      (args) =>
+        this.prisma.review.findMany({
+          where,
+          include: reviewInclude,
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.review.count({ where }),
+      pagination,
+    );
   }
 
-  findByRestaurant(restaurantId: string): Promise<Review[]> {
-    return this.prisma.review.findMany({
-      where: { restaurantId },
-      include: reviewInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+  findByRestaurant(
+    restaurantId: string,
+    pagination: PaginationArgs,
+  ): Promise<PaginatedResult<Review>> {
+    const where = { restaurantId };
+
+    return paginate(
+      (args) =>
+        this.prisma.review.findMany({
+          where,
+          include: reviewInclude,
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.review.count({ where }),
+      pagination,
+    );
   }
 
-  findByDriver(driverId: string): Promise<Review[]> {
-    return this.prisma.review.findMany({
-      where: { driverId },
-      include: reviewInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+  findByDriver(
+    driverId: string,
+    pagination: PaginationArgs,
+  ): Promise<PaginatedResult<Review>> {
+    const where = { driverId };
+
+    return paginate(
+      (args) =>
+        this.prisma.review.findMany({
+          where,
+          include: reviewInclude,
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.review.count({ where }),
+      pagination,
+    );
   }
 
   async findOne(id: string): Promise<Review> {

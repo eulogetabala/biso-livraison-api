@@ -4,6 +4,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMenuItemInput } from './dto/create-menu-item.input';
 import { UpdateMenuItemInput } from './dto/update-menu-item.input';
 import { SearchMenuItemsInput } from './dto/search-menu-items.input';
+import { PaginationArgs } from '../../common/dto/pagination.args';
+import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class MenusService {
@@ -13,7 +15,61 @@ export class MenusService {
     return this.prisma.menuItem.create({ data });
   }
 
-  search(input: SearchMenuItemsInput = {}): Promise<MenuItem[]> {
+  search(
+    input: SearchMenuItemsInput = {},
+    pagination: PaginationArgs,
+  ): Promise<PaginatedResult<MenuItem>> {
+    const where = this.buildSearchWhere(input);
+
+    return paginate(
+      (args) =>
+        this.prisma.menuItem.findMany({
+          where,
+          include: { restaurant: true },
+          orderBy: { name: 'asc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.menuItem.count({ where }),
+      pagination,
+    );
+  }
+
+  findAll(pagination: PaginationArgs): Promise<PaginatedResult<MenuItem>> {
+    return paginate(
+      (args) =>
+        this.prisma.menuItem.findMany({
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.menuItem.count(),
+      pagination,
+    );
+  }
+
+  findByRestaurant(
+    restaurantId: string,
+    pagination: PaginationArgs,
+  ): Promise<PaginatedResult<MenuItem>> {
+    const where: Prisma.MenuItemWhereInput = { restaurantId };
+
+    return paginate(
+      (args) =>
+        this.prisma.menuItem.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.menuItem.count({ where }),
+      pagination,
+    );
+  }
+
+  private buildSearchWhere(
+    input: SearchMenuItemsInput,
+  ): Prisma.MenuItemWhereInput {
     const where: Prisma.MenuItemWhereInput = {};
 
     if (input.restaurantId) {
@@ -33,24 +89,7 @@ export class MenusService {
       where.OR = [{ name: q }, { description: q }];
     }
 
-    return this.prisma.menuItem.findMany({
-      where,
-      include: { restaurant: true },
-      orderBy: { name: 'asc' },
-    });
-  }
-
-  findAll(): Promise<MenuItem[]> {
-    return this.prisma.menuItem.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  findByRestaurant(restaurantId: string): Promise<MenuItem[]> {
-    return this.prisma.menuItem.findMany({
-      where: { restaurantId },
-      orderBy: { createdAt: 'desc' },
-    });
+    return where;
   }
 
   findOne(id: string): Promise<MenuItem> {

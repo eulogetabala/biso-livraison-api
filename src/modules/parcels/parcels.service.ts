@@ -8,6 +8,8 @@ import { Parcel, ParcelStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateParcelInput } from './dto/create-parcel.input';
+import { PaginationArgs } from '../../common/dto/pagination.args';
+import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
 
 const parcelInclude = { sender: true } as const;
 
@@ -34,19 +36,38 @@ export class ParcelsService {
     });
   }
 
-  findAll(): Promise<Parcel[]> {
-    return this.prisma.parcel.findMany({
-      include: parcelInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+  findAll(pagination: PaginationArgs): Promise<PaginatedResult<Parcel>> {
+    return paginate(
+      (args) =>
+        this.prisma.parcel.findMany({
+          include: parcelInclude,
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.parcel.count(),
+      pagination,
+    );
   }
 
-  myParcels(senderId: string): Promise<Parcel[]> {
-    return this.prisma.parcel.findMany({
-      where: { senderId },
-      include: parcelInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+  myParcels(
+    senderId: string,
+    pagination: PaginationArgs,
+  ): Promise<PaginatedResult<Parcel>> {
+    const where = { senderId };
+
+    return paginate(
+      (args) =>
+        this.prisma.parcel.findMany({
+          where,
+          include: parcelInclude,
+          orderBy: { createdAt: 'desc' },
+          skip: args.skip,
+          take: args.take,
+        }),
+      () => this.prisma.parcel.count({ where }),
+      pagination,
+    );
   }
 
   async findOne(id: string, currentUser: CurrentUser): Promise<Parcel> {

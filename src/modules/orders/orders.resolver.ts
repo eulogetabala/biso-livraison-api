@@ -3,8 +3,10 @@ import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { OrdersService } from './orders.service';
 import { OrderModel } from './models/order.model';
+import { PaginatedOrderModel } from './models/paginated-order.model';
 import { CreateOrderInput } from './dto/create-order.input';
 import { UpdateOrderStatusInput } from './dto/update-order-status.input';
+import { PaginationArgs } from '../../common/dto/pagination.args';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -14,17 +16,20 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class OrdersResolver {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Query(() => [OrderModel])
+  @Query(() => PaginatedOrderModel)
   @UseGuards(JwtAuthGuard)
-  myOrders(@CurrentUser() user: CurrentUser) {
-    return this.ordersService.findByUser(user.id);
+  myOrders(
+    @Args() pagination: PaginationArgs,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.ordersService.findByUser(user.id, pagination);
   }
 
-  @Query(() => [OrderModel])
+  @Query(() => PaginatedOrderModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  orders() {
-    return this.ordersService.findAll();
+  orders(@Args() pagination: PaginationArgs) {
+    return this.ordersService.findAll(pagination);
   }
 
   @Query(() => OrderModel)
