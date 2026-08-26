@@ -70,13 +70,16 @@ enum NotificationType {
 model User {
   id        String   @id @default(uuid())
 
-  email     String   @unique
+  email     String?
+
   password  String
 
   firstName String
   lastName  String
 
-  phone     String
+  phone     String   @unique
+
+  phoneVerified Boolean @default(false)
 
   avatarUrl String?
 

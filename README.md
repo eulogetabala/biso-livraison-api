@@ -52,6 +52,21 @@ npm run start:dev
 
 L'API GraphQL est disponible sur **http://localhost:3001/graphql**.
 
+### Documentation API
+
+| Ressource | URL / Fichier |
+|-----------|---------------|
+| Swagger UI (REST) | http://localhost:3001/api/docs |
+| OpenAPI JSON | http://localhost:3001/api/docs-json |
+| Guide intégration mobile | [docs/API.md](./docs/API.md) |
+| Schéma GraphQL SDL | [docs/schema.graphql](./docs/schema.graphql) (généré au démarrage) |
+| Workflow équipe | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+
+```bash
+# Exporter la liste des opérations GraphQL (API démarrée)
+npm run docs:export-graphql
+```
+
 ## Scripts
 
 | Commande | Description |
@@ -60,7 +75,8 @@ L'API GraphQL est disponible sur **http://localhost:3001/graphql**.
 | `npm run build` | Compilation TypeScript |
 | `npm run lint` | ESLint + Prettier |
 | `npm test` | Tests unitaires |
-| `npm run test:e2e` | Tests end-to-end |
+| `npm run test:e2e` | Tests end-to-end (REST + GraphQL) |
+| `npm run docs:export-graphql` | Exporte docs/graphql-operations.md |
 
 ## Workflow Git
 

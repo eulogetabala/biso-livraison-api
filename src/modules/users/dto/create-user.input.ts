@@ -1,7 +1,9 @@
 import { Field, InputType } from '@nestjs/graphql';
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -10,10 +12,10 @@ import {
 
 @InputType()
 export class CreateUserInput {
-  @Field()
+  @Field({ nullable: true })
+  @IsOptional()
   @IsEmail()
-  @IsNotEmpty()
-  email: string;
+  email?: string;
 
   @Field()
   @IsString()
@@ -37,4 +39,9 @@ export class CreateUserInput {
     message: 'phone must be a valid phone number',
   })
   phone: string;
+
+  @Field({ defaultValue: false })
+  @IsOptional()
+  @IsBoolean()
+  phoneVerified?: boolean;
 }

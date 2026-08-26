@@ -6,8 +6,8 @@ export class UserModel {
   @Field(() => ID)
   id: string;
 
-  @Field()
-  email: string;
+  @Field(() => String, { nullable: true })
+  email: string | null;
 
   @Field()
   firstName: string;

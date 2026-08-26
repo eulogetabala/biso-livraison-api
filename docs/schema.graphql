@@ -1,0 +1,598 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+input AddTrackingEventInput {
+  deliveryId: ID!
+  latitude: Float
+  longitude: Float
+  message: String
+  status: DeliveryStatus!
+}
+
+input AssignDriverInput {
+  driverId: ID!
+  orderId: ID!
+}
+
+input CreateMenuItemInput {
+  category: MenuItemCategory!
+  description: String
+  imageUrl: String
+  isAvailable: Boolean
+  name: String!
+  price: Float!
+  restaurantId: ID!
+}
+
+input CreateOrderInput {
+  deliveryAddress: String!
+  deliveryCity: String!
+  deliveryZipCode: String!
+  items: [CreateOrderItemInput!]!
+  paymentMethod: PaymentMethod = CASH_ON_DELIVERY
+  restaurantId: ID!
+}
+
+input CreateOrderItemInput {
+  menuItemId: ID!
+  quantity: Int!
+}
+
+input CreateParcelInput {
+  description: String
+  receiverAddress: String!
+  receiverName: String!
+  receiverPhone: String!
+  weight: Float
+}
+
+input CreateRestaurantInput {
+  address: String!
+  city: String!
+  coverImageUrl: String
+  cuisineType: String!
+  deliveryFee: Float = 0
+  description: String
+  estimatedDeliveryTime: Float = 30
+  imageUrl: String
+  isActive: Boolean
+  name: String!
+  phone: String!
+  rating: Float
+  zipCode: String!
+}
+
+input CreateReviewInput {
+  comment: String
+  driverId: ID
+  orderId: ID!
+  rating: Int!
+  restaurantId: ID
+}
+
+input CreateUserInput {
+  email: String
+  firstName: String!
+  lastName: String!
+  password: String!
+  phone: String!
+  phoneVerified: Boolean! = false
+}
+
+type DailyOrdersModel {
+  date: String!
+  orders: Int!
+  revenue: Float!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type DeliveryModel {
+  createdAt: DateTime!
+  deliveredAt: DateTime
+  driver: UserModel
+  driverId: ID!
+  id: ID!
+  order: OrderModel
+  orderId: ID!
+  pickedUpAt: DateTime
+  status: DeliveryStatus!
+  updatedAt: DateTime!
+}
+
+"""Current status of a delivery"""
+enum DeliveryStatus {
+  ASSIGNED
+  DELIVERED
+  IN_TRANSIT
+  PICKED_UP
+}
+
+type DriverLocationModel {
+  deliveryId: ID
+  driverId: ID!
+  id: ID!
+  latitude: Float!
+  longitude: Float!
+  updatedAt: DateTime!
+}
+
+type DriverModel {
+  createdAt: DateTime!
+  id: ID!
+  isAvailable: Boolean!
+  rating: Float!
+  reviewCount: Int!
+  updatedAt: DateTime!
+  user: UserModel
+  userId: ID!
+  vehiclePlate: String
+  vehicleType: String!
+}
+
+input LoginInput {
+  password: String!
+  phone: String!
+}
+
+type LoginResultModel {
+  accessToken: String!
+  user: UserModel!
+}
+
+input MarkNotificationReadInput {
+  id: ID!
+}
+
+"""Category of a menu item"""
+enum MenuItemCategory {
+  APPETIZER
+  DESSERT
+  DRINK
+  FRUIT
+  LUNCH
+  MAIN_COURSE
+  SIDE
+  SNACK
+}
+
+type MenuItemModel {
+  category: MenuItemCategory!
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  imageUrl: String
+  isAvailable: Boolean!
+  name: String!
+  price: Float!
+  restaurant: RestaurantModel
+  restaurantId: ID!
+  updatedAt: DateTime!
+}
+
+type Mutation {
+  addTrackingEvent(input: AddTrackingEventInput!): TrackingEventModel!
+  assignAvailableDriver(orderId: ID!): DeliveryModel!
+  assignDriver(input: AssignDriverInput!): DeliveryModel!
+  cancelOrder(id: ID!): OrderModel!
+  collectCashOnDelivery(orderId: ID!): PaymentModel!
+  createDriverProfile(userId: ID!, vehiclePlate: String, vehicleType: String): DriverModel!
+  createMenuItem(input: CreateMenuItemInput!): MenuItemModel!
+  createOrder(input: CreateOrderInput!): OrderModel!
+  createParcel(input: CreateParcelInput!): ParcelModel!
+  createRestaurant(input: CreateRestaurantInput!): RestaurantModel!
+  createReview(input: CreateReviewInput!): ReviewModel!
+  createUser(input: CreateUserInput!): UserModel!
+  deleteDelivery(id: ID!): DeliveryModel!
+  deleteMenuItem(id: ID!): MenuItemModel!
+  deleteOrder(id: ID!): OrderModel!
+  deleteParcel(id: ID!): ParcelModel!
+  deleteRestaurant(id: ID!): RestaurantModel!
+  deleteReview(id: ID!): ReviewModel!
+  login(input: LoginInput!): LoginResultModel!
+  markAllNotificationsAsRead: Int!
+  markNotificationAsRead(input: MarkNotificationReadInput!): NotificationModel!
+  requestOtp(input: RequestOtpInput!): OtpRequestResult!
+  setDriverAvailability(input: SetDriverAvailabilityInput!): DriverModel!
+  updateDeliveryStatus(input: UpdateDeliveryStatusInput!): DeliveryModel!
+  updateDriverLocation(input: UpdateDriverLocationInput!): DriverLocationModel!
+  updateDriverProfile(input: UpdateDriverProfileInput!): DriverModel!
+  updateMenuItem(input: UpdateMenuItemInput!): MenuItemModel!
+  updateOrderStatus(input: UpdateOrderStatusInput!): OrderModel!
+  updateParcelStatus(input: UpdateParcelStatusInput!): ParcelModel!
+  updateProfile(input: UpdateProfileInput!): UserModel!
+  updateRestaurant(input: UpdateRestaurantInput!): RestaurantModel!
+  updateReview(input: UpdateReviewInput!): ReviewModel!
+  verifyOtp(input: VerifyOtpInput!): Boolean!
+}
+
+type NotificationModel {
+  createdAt: DateTime!
+  id: ID!
+  message: String!
+  readAt: DateTime
+  title: String!
+  type: NotificationType!
+  userId: ID!
+}
+
+"""Type of a notification"""
+enum NotificationType {
+  DELIVERY_STATUS
+  ORDER_STATUS
+  PAYMENT
+  PROMOTIONAL
+}
+
+type OrderItemModel {
+  id: ID!
+  menuItem: MenuItemModel
+  menuItemId: ID!
+  orderId: ID!
+  quantity: Int!
+  unitPrice: Float!
+}
+
+type OrderModel {
+  createdAt: DateTime!
+  delivery: DeliveryModel
+  deliveryAddress: String!
+  deliveryCity: String!
+  deliveryFee: Float!
+  deliveryZipCode: String!
+  grandTotal: Float!
+  id: ID!
+  items: [OrderItemModel!]!
+  payment: PaymentModel
+  restaurant: RestaurantModel
+  restaurantId: ID!
+  status: OrderStatus!
+  total: Float!
+  updatedAt: DateTime!
+  user: UserModel
+  userId: ID!
+}
+
+"""Current status of an order"""
+enum OrderStatus {
+  CANCELLED
+  CONFIRMED
+  DELIVERED
+  IN_TRANSIT
+  PENDING
+  PREPARING
+}
+
+type OrdersByStatusModel {
+  count: Int!
+  status: OrderStatus!
+}
+
+type OtpRequestResult {
+  devCode: String
+  expiresIn: Float!
+  phone: String!
+}
+
+type PageInfo {
+  currentPage: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  limit: Int!
+  totalItems: Int!
+  totalPages: Int!
+}
+
+type PaginatedDeliveryModel {
+  items: [DeliveryModel!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedMenuItemModel {
+  items: [MenuItemModel!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedNotificationModel {
+  items: [NotificationModel!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedOrderModel {
+  items: [OrderModel!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedParcelModel {
+  items: [ParcelModel!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedRestaurantModel {
+  items: [RestaurantModel!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedReviewModel {
+  items: [ReviewModel!]!
+  pageInfo: PageInfo!
+}
+
+type ParcelModel {
+  createdAt: DateTime!
+  deliveredAt: DateTime
+  description: String
+  id: ID!
+  receiverAddress: String!
+  receiverName: String!
+  receiverPhone: String!
+  sender: UserModel
+  senderId: ID!
+  status: ParcelStatus!
+  updatedAt: DateTime!
+  weight: Float!
+}
+
+"""Current status of a parcel"""
+enum ParcelStatus {
+  CANCELLED
+  DELIVERED
+  IN_TRANSIT
+  PENDING
+  PICKED_UP
+}
+
+"""Payment method used for an order"""
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+}
+
+type PaymentModel {
+  amount: Float!
+  createdAt: DateTime!
+  id: ID!
+  method: PaymentMethod!
+  order: OrderModel
+  orderId: ID!
+  paidAt: DateTime
+  status: PaymentStatus!
+  updatedAt: DateTime!
+}
+
+"""Current status of a payment"""
+enum PaymentStatus {
+  CANCELLED
+  PAID
+  PENDING
+}
+
+type Query {
+  availableDrivers: [DriverModel!]!
+  dailyOrders(range: StatisticsRangeInput): [DailyOrdersModel!]!
+  deliveries(limit: Int = 20, page: Int = 1): PaginatedDeliveryModel!
+  deliveryByOrder(orderId: ID!): DeliveryModel!
+  driver(id: ID!): DriverModel!
+  driverLocation(driverId: ID!): DriverLocationModel!
+  driverLocations: [DriverLocationModel!]!
+  drivers: [DriverModel!]!
+  me: UserModel!
+  menuItem(id: ID!): MenuItemModel!
+  menuItems(limit: Int = 20, page: Int = 1): PaginatedMenuItemModel!
+  menuItemsByRestaurant(limit: Int = 20, page: Int = 1, restaurantId: ID!): PaginatedMenuItemModel!
+  myDeliveries(limit: Int = 20, page: Int = 1): PaginatedDeliveryModel!
+  myDriverProfile: DriverModel!
+  myLocation: DriverLocationModel!
+  myNotifications(limit: Int = 20, page: Int = 1): PaginatedNotificationModel!
+  myOrders(limit: Int = 20, page: Int = 1): PaginatedOrderModel!
+  myParcels(limit: Int = 20, page: Int = 1): PaginatedParcelModel!
+  myReviews(limit: Int = 20, page: Int = 1): PaginatedReviewModel!
+  order(id: ID!): OrderModel!
+  orders(limit: Int = 20, page: Int = 1): PaginatedOrderModel!
+  ordersByStatus: [OrdersByStatusModel!]!
+  parcel(id: ID!): ParcelModel!
+  parcels(limit: Int = 20, page: Int = 1): PaginatedParcelModel!
+  paymentByOrder(orderId: ID!): PaymentModel!
+  payments: [PaymentModel!]!
+  restaurant(id: ID!): RestaurantModel!
+  restaurants(limit: Int = 20, page: Int = 1): PaginatedRestaurantModel!
+  revenueByRestaurant(range: StatisticsRangeInput): [RevenueByRestaurantModel!]!
+  review(id: ID!): ReviewModel!
+  reviews(limit: Int = 20, page: Int = 1): PaginatedReviewModel!
+  reviewsByDriver(driverId: ID!, limit: Int = 20, page: Int = 1): PaginatedReviewModel!
+  reviewsByRestaurant(limit: Int = 20, page: Int = 1, restaurantId: ID!): PaginatedReviewModel!
+  searchMenuItems(input: SearchMenuItemsInput, limit: Int = 20, page: Int = 1): PaginatedMenuItemModel!
+  searchRestaurants(input: SearchRestaurantsInput, limit: Int = 20, page: Int = 1): PaginatedRestaurantModel!
+  statisticsOverview: StatisticsOverviewModel!
+  topRestaurants(input: TopRestaurantsInput): [RevenueByRestaurantModel!]!
+  trackDelivery(orderId: ID!): DriverLocationModel!
+  trackingByDelivery(deliveryId: ID!): [TrackingEventModel!]!
+  unreadNotificationsCount: Int!
+  users: [UserModel!]!
+}
+
+input RequestOtpInput {
+  phone: String!
+}
+
+type RestaurantModel {
+  address: String!
+  city: String!
+  coverImageUrl: String
+  createdAt: DateTime!
+  cuisineType: String!
+  deliveryFee: Float!
+  description: String
+  estimatedDeliveryTime: Float!
+  id: ID!
+  imageUrl: String
+  isActive: Boolean!
+  name: String!
+  phone: String!
+  rating: Float!
+  updatedAt: DateTime!
+  zipCode: String!
+}
+
+type RevenueByRestaurantModel {
+  orderCount: Int!
+  restaurantId: ID!
+  restaurantName: String!
+  revenue: Float!
+}
+
+type ReviewModel {
+  author: UserModel
+  comment: String
+  createdAt: DateTime!
+  driver: UserModel
+  driverId: ID
+  id: ID!
+  order: OrderModel
+  orderId: ID!
+  rating: Int!
+  restaurant: RestaurantModel
+  restaurantId: ID
+  updatedAt: DateTime!
+  userId: ID!
+}
+
+input SearchMenuItemsInput {
+  category: MenuItemCategory
+  onlyAvailable: Boolean = true
+  query: String
+  restaurantId: ID
+}
+
+input SearchRestaurantsInput {
+  city: String
+  cuisineType: String
+  minRating: Float
+  onlyActive: Boolean = true
+  query: String
+}
+
+input SetDriverAvailabilityInput {
+  isAvailable: Boolean!
+}
+
+type StatisticsOverviewModel {
+  activeDrivers: Int!
+  activeRestaurants: Int!
+  averageOrderValue: Float!
+  pendingOrders: Int!
+  totalOrders: Int!
+  totalRevenue: Float!
+}
+
+input StatisticsRangeInput {
+  from: String
+  to: String
+}
+
+input TopRestaurantsInput {
+  limit: Int = 5
+}
+
+type TrackingEventModel {
+  createdAt: DateTime!
+  delivery: DeliveryModel
+  deliveryId: ID!
+  id: ID!
+  latitude: Float
+  longitude: Float
+  message: String
+  status: DeliveryStatus!
+}
+
+input UpdateDeliveryStatusInput {
+  id: ID!
+  status: DeliveryStatus!
+}
+
+input UpdateDriverLocationInput {
+  deliveryId: ID
+  latitude: Float!
+  longitude: Float!
+}
+
+input UpdateDriverProfileInput {
+  vehiclePlate: String
+  vehicleType: String
+}
+
+input UpdateMenuItemInput {
+  category: MenuItemCategory
+  description: String
+  id: String!
+  imageUrl: String
+  isAvailable: Boolean
+  name: String
+  price: Float
+  restaurantId: ID
+}
+
+input UpdateOrderStatusInput {
+  id: ID!
+  status: OrderStatus!
+}
+
+input UpdateParcelStatusInput {
+  id: ID!
+  status: ParcelStatus!
+}
+
+input UpdateProfileInput {
+  avatarUrl: String
+  email: String
+  firstName: String
+  lastName: String
+  password: String
+  phone: String
+}
+
+input UpdateRestaurantInput {
+  address: String
+  city: String
+  coverImageUrl: String
+  cuisineType: String
+  deliveryFee: Float = 0
+  description: String
+  estimatedDeliveryTime: Float = 30
+  id: String!
+  imageUrl: String
+  isActive: Boolean
+  name: String
+  phone: String
+  rating: Float
+  zipCode: String
+}
+
+input UpdateReviewInput {
+  comment: String
+  driverId: ID
+  id: ID!
+  orderId: ID
+  rating: Int
+  restaurantId: ID
+}
+
+type UserModel {
+  avatarUrl: String
+  createdAt: DateTime!
+  email: String
+  firstName: String!
+  id: ID!
+  lastName: String!
+  phone: String!
+  role: String!
+  updatedAt: DateTime!
+}
+
+input VerifyOtpInput {
+  code: String!
+  phone: String!
+}
