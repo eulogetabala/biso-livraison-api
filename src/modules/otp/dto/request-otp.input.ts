@@ -2,7 +2,7 @@ import { Field, InputType } from '@nestjs/graphql';
 import { IsNotEmpty, IsString, Matches } from 'class-validator';
 
 @InputType()
-export class LoginInput {
+export class RequestOtpInput {
   @Field()
   @IsString()
   @IsNotEmpty()
@@ -10,9 +10,4 @@ export class LoginInput {
     message: 'phone must be a valid phone number',
   })
   phone: string;
-
-  @Field()
-  @IsString()
-  @IsNotEmpty()
-  password: string;
 }

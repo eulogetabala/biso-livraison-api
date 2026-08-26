@@ -35,6 +35,14 @@ export interface AppConfig {
     clientEmail: string;
     privateKey: string;
   };
+  twilio: {
+    accountSid: string;
+    authToken: string;
+    fromNumber: string;
+    verifyServiceSid: string;
+    verifyFriendlyName: string;
+    allowTestOtp: boolean;
+  };
   uploads: {
     directory: string;
     publicUrl: string;
@@ -79,6 +87,14 @@ export default (): AppConfig => {
       projectId: process.env.FIREBASE_PROJECT_ID ?? '',
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL ?? '',
       privateKey: process.env.FIREBASE_PRIVATE_KEY ?? '',
+    },
+    twilio: {
+      accountSid: process.env.TWILIO_ACCOUNT_SID ?? '',
+      authToken: process.env.TWILIO_AUTH_TOKEN ?? '',
+      fromNumber: process.env.TWILIO_FROM_NUMBER ?? '',
+      verifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID ?? '',
+      verifyFriendlyName: process.env.TWILIO_VERIFY_FRIENDLY_NAME ?? 'Biso Livraison',
+      allowTestOtp: (process.env.ALLOW_TEST_OTP ?? 'false') === 'true',
     },
     uploads: {
       directory: process.env.UPLOAD_DIR ?? 'public/uploads',

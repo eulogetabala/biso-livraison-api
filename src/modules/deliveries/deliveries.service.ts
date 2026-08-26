@@ -153,7 +153,7 @@ export class DeliveriesService {
     );
 
     void this.mailService.sendNotification(
-      driver.email,
+      driver.email ?? '',
       'DELIVERY',
       'Nouvelle livraison assignée',
       `Une nouvelle livraison vous a été assignée pour la commande ${orderId}.`,

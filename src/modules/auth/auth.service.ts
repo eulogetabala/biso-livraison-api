@@ -8,7 +8,7 @@ export interface LoginResult {
   accessToken: string;
   user: {
     id: string;
-    email: string;
+    email: string | null;
     firstName: string;
     lastName: string;
     phone: string;
@@ -29,6 +29,7 @@ export class AuthService {
 
     const payload = {
       sub: user.id,
+      phone: user.phone,
       email: user.email,
       role: user.role,
     };
@@ -51,7 +52,7 @@ export class AuthService {
 
   async validateUser(input: LoginInput) {
     const user = await this.prisma.user.findUnique({
-      where: { email: input.email },
+      where: { phone: input.phone },
     });
 
     if (!user) {

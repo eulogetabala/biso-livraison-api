@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GraphQLError } from 'graphql';
+import { join } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -19,7 +20,10 @@ import { StatisticsModule } from './modules/statistics/statistics.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { GeoModule } from './modules/geo/geo.module';
 import { MailModule } from './modules/mail/mail.module';
+import { SmsModule } from './modules/sms/sms.module';
+import { OtpModule } from './modules/otp/otp.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { HealthModule } from './modules/health/health.module';
 import configuration, { AppConfig } from './config/configuration';
 
 @Module({
@@ -37,7 +41,8 @@ import configuration, { AppConfig } from './config/configuration';
           configService.getOrThrow<AppConfig['app']>('app').isProduction;
 
         return {
-          autoSchemaFile: true,
+          autoSchemaFile: join(process.cwd(), 'docs/schema.graphql'),
+          sortSchema: true,
           includeStacktraceInErrorResponses: !isProduction,
           formatError: (error: GraphQLError) => {
             // Keep user-facing validation/authorization messages intact
@@ -71,7 +76,10 @@ import configuration, { AppConfig } from './config/configuration';
     NotificationsModule,
     GeoModule,
     MailModule,
+    SmsModule,
+    OtpModule,
     UploadsModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

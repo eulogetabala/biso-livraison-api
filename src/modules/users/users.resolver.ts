@@ -9,6 +9,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { CurrentUser as CurrentUserType } from '../auth/decorators/current-user.decorator';
 
 @Resolver(() => UserModel)
 export class UsersResolver {
@@ -23,7 +24,7 @@ export class UsersResolver {
 
   @Query(() => UserModel)
   @UseGuards(JwtAuthGuard)
-  me(@CurrentUser() user: { id: string; email: string; role: string }) {
+  me(@CurrentUser() user: CurrentUserType) {
     return this.usersService.findById(user.id);
   }
 
@@ -31,7 +32,7 @@ export class UsersResolver {
   @UseGuards(JwtAuthGuard)
   updateProfile(
     @Args('input') input: UpdateProfileInput,
-    @CurrentUser() user: { id: string; email: string; role: string },
+    @CurrentUser() user: CurrentUserType,
   ) {
     return this.usersService.updateProfile(user.id, input);
   }

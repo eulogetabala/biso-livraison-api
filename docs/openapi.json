@@ -1,0 +1,175 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/uploads/image": {
+      "post": {
+        "description": "Enregistre une image (JPEG, PNG, WebP, GIF, SVG) et retourne son URL publique. Taille maximale : 5 Mo. Authentification JWT requise.",
+        "operationId": "UploadsController_uploadImage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Fichier image à uploader"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Fichier enregistré avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadedFileResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Fichier absent, type non autorisé ou taille dépassée"
+          },
+          "401": {
+            "description": "Token JWT manquant ou invalide"
+          }
+        },
+        "security": [
+          {
+            "JWT": []
+          }
+        ],
+        "summary": "Uploader une image",
+        "tags": [
+          "Uploads"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Endpoint de supervision (load balancer, CI, monitoring). Retourne le statut du service et la version déployée.",
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Vérifier l’état du service",
+        "tags": [
+          "Health"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Biso Livraison API",
+    "description": "API backend Biso Livraison — livraison de repas et colis au Congo.\n\n## Surfaces API\n\n| Surface | Endpoint | Usage |\n|---------|----------|-------|\n| **GraphQL** | `POST /graphql` | API principale (auth, commandes, restaurants, OTP…) |\n| **REST** | `GET /health` | Supervision / health check |\n| **REST** | `POST /uploads/image` | Upload d’images (JWT requis) |\n| **Static** | `GET /uploads/*` | Fichiers uploadés |\n\n### Authentification\n\nObtenir un token via la mutation GraphQL `login`, puis envoyer :\n`Authorization: Bearer <accessToken>`\n\n### Documentation GraphQL\n\n- Schéma SDL : `docs/schema.graphql`\n- Référence complète : `docs/API.md`\n- Playground : `/graphql` (mode développement)\n",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Supervision et disponibilité du service"
+    },
+    {
+      "name": "Uploads",
+      "description": "Upload de fichiers (images)"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:3001",
+      "description": "Développement local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "JWT": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Token JWT obtenu via la mutation GraphQL `login`"
+      }
+    },
+    "schemas": {
+      "UploadedFileResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "/uploads/1724678400000-a1b2c3d4e5f6.jpg",
+            "description": "URL publique du fichier uploadé"
+          },
+          "originalName": {
+            "type": "string",
+            "example": "restaurant-cover.jpg"
+          },
+          "size": {
+            "type": "number",
+            "example": 245760,
+            "description": "Taille en octets"
+          },
+          "mimeType": {
+            "type": "string",
+            "example": "image/jpeg"
+          }
+        },
+        "required": [
+          "url",
+          "originalName",
+          "size",
+          "mimeType"
+        ]
+      },
+      "HealthResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok",
+            "enum": [
+              "ok"
+            ]
+          },
+          "service": {
+            "type": "string",
+            "example": "biso-livraison-api"
+          },
+          "version": {
+            "type": "string",
+            "example": "0.0.1"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-08-26T15:00:00.000Z"
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "version",
+          "timestamp"
+        ]
+      }
+    }
+  }
+}

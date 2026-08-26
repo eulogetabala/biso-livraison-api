@@ -6,7 +6,8 @@ import { AppConfig } from '../../../config/configuration';
 
 export interface JwtPayload {
   sub: string;
-  email: string;
+  phone: string;
+  email: string | null;
   role: string;
 }
 
@@ -28,6 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   validate(payload: JwtPayload) {
     return {
       id: payload.sub,
+      phone: payload.phone,
       email: payload.email,
       role: payload.role,
     };

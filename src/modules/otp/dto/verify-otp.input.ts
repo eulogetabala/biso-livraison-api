@@ -2,7 +2,7 @@ import { Field, InputType } from '@nestjs/graphql';
 import { IsNotEmpty, IsString, Matches } from 'class-validator';
 
 @InputType()
-export class LoginInput {
+export class VerifyOtpInput {
   @Field()
   @IsString()
   @IsNotEmpty()
@@ -14,5 +14,8 @@ export class LoginInput {
   @Field()
   @IsString()
   @IsNotEmpty()
-  password: string;
+  @Matches(/^\d{4,8}$/, {
+    message: 'code must contain only digits',
+  })
+  code: string;
 }

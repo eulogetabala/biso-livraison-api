@@ -1,0 +1,1264 @@
+{
+  "__schema": {
+    "queryType": {
+      "name": "Query",
+      "fields": [
+        {
+          "name": "availableDrivers",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "dailyOrders",
+          "description": null,
+          "args": [
+            {
+              "name": "range",
+              "type": {
+                "name": "StatisticsRangeInput",
+                "kind": "INPUT_OBJECT",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "deliveries",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "deliveryByOrder",
+          "description": null,
+          "args": [
+            {
+              "name": "orderId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "driver",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "driverLocation",
+          "description": null,
+          "args": [
+            {
+              "name": "driverId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "driverLocations",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "drivers",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "me",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "menuItem",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "menuItems",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "menuItemsByRestaurant",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "restaurantId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "myDeliveries",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "myDriverProfile",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "myLocation",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "myNotifications",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "myOrders",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "myParcels",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "myReviews",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "order",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "orders",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "ordersByStatus",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "parcel",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "parcels",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "paymentByOrder",
+          "description": null,
+          "args": [
+            {
+              "name": "orderId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "payments",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "restaurant",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "restaurants",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "revenueByRestaurant",
+          "description": null,
+          "args": [
+            {
+              "name": "range",
+              "type": {
+                "name": "StatisticsRangeInput",
+                "kind": "INPUT_OBJECT",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "review",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "reviews",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "reviewsByDriver",
+          "description": null,
+          "args": [
+            {
+              "name": "driverId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            },
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "reviewsByRestaurant",
+          "description": null,
+          "args": [
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "restaurantId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "searchMenuItems",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": "SearchMenuItemsInput",
+                "kind": "INPUT_OBJECT",
+                "ofType": null
+              }
+            },
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "searchRestaurants",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": "SearchRestaurantsInput",
+                "kind": "INPUT_OBJECT",
+                "ofType": null
+              }
+            },
+            {
+              "name": "limit",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "page",
+              "type": {
+                "name": "Int",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "statisticsOverview",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "topRestaurants",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": "TopRestaurantsInput",
+                "kind": "INPUT_OBJECT",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "trackDelivery",
+          "description": null,
+          "args": [
+            {
+              "name": "orderId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "trackingByDelivery",
+          "description": null,
+          "args": [
+            {
+              "name": "deliveryId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "unreadNotificationsCount",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "users",
+          "description": null,
+          "args": []
+        }
+      ]
+    },
+    "mutationType": {
+      "name": "Mutation",
+      "fields": [
+        {
+          "name": "addTrackingEvent",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "AddTrackingEventInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "assignAvailableDriver",
+          "description": null,
+          "args": [
+            {
+              "name": "orderId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "assignDriver",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "AssignDriverInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "cancelOrder",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "collectCashOnDelivery",
+          "description": null,
+          "args": [
+            {
+              "name": "orderId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "createDriverProfile",
+          "description": null,
+          "args": [
+            {
+              "name": "userId",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            },
+            {
+              "name": "vehiclePlate",
+              "type": {
+                "name": "String",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            },
+            {
+              "name": "vehicleType",
+              "type": {
+                "name": "String",
+                "kind": "SCALAR",
+                "ofType": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "createMenuItem",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "CreateMenuItemInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "createOrder",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "CreateOrderInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "createParcel",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "CreateParcelInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "createRestaurant",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "CreateRestaurantInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "createReview",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "CreateReviewInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "createUser",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "CreateUserInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "deleteDelivery",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "deleteMenuItem",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "deleteOrder",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "deleteParcel",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "deleteRestaurant",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "deleteReview",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "ID",
+                  "kind": "SCALAR"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "login",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "LoginInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "markAllNotificationsAsRead",
+          "description": null,
+          "args": []
+        },
+        {
+          "name": "markNotificationAsRead",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "MarkNotificationReadInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "requestOtp",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "RequestOtpInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "setDriverAvailability",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "SetDriverAvailabilityInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "updateDeliveryStatus",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "UpdateDeliveryStatusInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "updateDriverLocation",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "UpdateDriverLocationInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "updateDriverProfile",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "UpdateDriverProfileInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "updateMenuItem",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "UpdateMenuItemInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "updateOrderStatus",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "UpdateOrderStatusInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "updateParcelStatus",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "UpdateParcelStatusInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "updateProfile",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "UpdateProfileInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "updateRestaurant",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "UpdateRestaurantInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "updateReview",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "UpdateReviewInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "verifyOtp",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "type": {
+                "name": null,
+                "kind": "NON_NULL",
+                "ofType": {
+                  "name": "VerifyOtpInput",
+                  "kind": "INPUT_OBJECT"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
