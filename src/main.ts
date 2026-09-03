@@ -40,22 +40,31 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  // ── Swagger / OpenAPI (endpoints REST) ──────────────────────────────
-  const swaggerConfig = buildSwaggerDocument();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document, {
-    jsonDocumentUrl: 'api/docs-json',
-    customSiteTitle: 'Biso Livraison API',
-  });
+  const isProduction =
+    configService.getOrThrow<AppConfig['app']>('app').isProduction;
 
-  const docsDir = join(process.cwd(), 'docs');
-  if (!existsSync(docsDir)) mkdirSync(docsDir, { recursive: true });
-  writeFileSync(
-    join(docsDir, 'openapi.json'),
-    JSON.stringify(document, null, 2),
-  );
+  if (!isProduction) {
+    const swaggerConfig = buildSwaggerDocument();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document, {
+      jsonDocumentUrl: 'api/docs-json',
+      customSiteTitle: 'Biso Livraison API',
+    });
+
+    const docsDir = join(process.cwd(), 'docs');
+    if (!existsSync(docsDir)) mkdirSync(docsDir, { recursive: true });
+    writeFileSync(
+      join(docsDir, 'openapi.json'),
+      JSON.stringify(document, null, 2),
+    );
+  }
 
   const port = parseInt(process.env.PORT ?? '3001', 10);
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
+  console.log(`API listening on port ${port}`);
 }
-void bootstrap();
+
+void bootstrap().catch((error) => {
+  console.error('Bootstrap failed:', error);
+  process.exit(1);
+});
