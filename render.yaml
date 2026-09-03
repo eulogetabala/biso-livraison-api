@@ -17,7 +17,7 @@ services:
     runtime: node
     plan: free
     healthCheckPath: /health
-    buildCommand: npm install --omit=peer && npx prisma generate && npm run build && npx prisma db push
+    buildCommand: npm install --omit=peer && npx prisma generate && NODE_OPTIONS=--max-old-space-size=2048 npm run build && npx prisma db push
     startCommand: node dist/src/main.js
     envVars:
       - key: NODE_ENV
@@ -36,8 +36,6 @@ services:
         value: 15m
       - key: DB_POOL_MAX
         value: "3"
-      - key: NODE_OPTIONS
-        value: --max-old-space-size=460
       - key: UPLOAD_DIR
         value: public/uploads
       - key: PUBLIC_UPLOAD_URL
