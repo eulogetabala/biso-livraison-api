@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { PrismaClient, UserRole } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcrypt';
+import { Pool } from 'pg';
 import { SEED_IDS } from '../prisma/seed-data';
 
 const connectionString = process.env.DATABASE_URL;
@@ -9,8 +10,15 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is not defined');
 }
 
+const pool = new Pool({
+  connectionString,
+  ssl: connectionString.includes('render.com')
+    ? { rejectUnauthorized: false }
+    : undefined,
+});
+
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString }),
+  adapter: new PrismaPg(pool),
 });
 
 async function main() {
@@ -49,4 +57,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });
