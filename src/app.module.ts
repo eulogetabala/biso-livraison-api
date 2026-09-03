@@ -68,6 +68,7 @@ import configuration, { AppConfig } from './config/configuration';
           introspection: !isProduction,
           includeStacktraceInErrorResponses: !isProduction,
           validationRules: [depthLimit(12)],
+          context: ({ req, res }: { req: unknown; res: unknown }) => ({ req, res }),
           formatError: (error: GraphQLError) => {
             // Keep user-facing validation/authorization messages intact
             // but strip internal stack traces in production.
