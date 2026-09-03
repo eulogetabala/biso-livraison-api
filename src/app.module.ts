@@ -53,10 +53,6 @@ import configuration, { AppConfig } from './config/configuration';
           },
           throttlers: [
             { name: 'default', ttl: throttler.defaultTtlMs, limit: throttler.defaultLimit },
-            { name: 'auth', ttl: 60_000, limit: 10 },
-            { name: 'otp', ttl: 60_000, limit: 5 },
-            { name: 'register', ttl: 3_600_000, limit: 5 },
-            { name: 'gps', ttl: 3_000, limit: 1 },
           ],
         };
       },
