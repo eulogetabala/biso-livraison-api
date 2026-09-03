@@ -63,7 +63,9 @@ import configuration, { AppConfig } from './config/configuration';
           configService.getOrThrow<AppConfig['app']>('app').isProduction;
 
         return {
-          autoSchemaFile: join(process.cwd(), 'docs/schema.graphql'),
+          autoSchemaFile: isProduction
+            ? true
+            : join(process.cwd(), 'docs/schema.graphql'),
           sortSchema: true,
           introspection: !isProduction,
           includeStacktraceInErrorResponses: !isProduction,
