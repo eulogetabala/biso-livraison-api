@@ -1,0 +1,63 @@
+# Render FREE — repo biso-livraison-api (backend seul)
+# Branch : main
+#
+# Après deploy, renseigner dans le dashboard :
+#   CORS_ORIGINS = https://votre-dashboard.onrender.com
+#   TWILIO_* (Verify obligatoire en prod)
+
+databases:
+  - name: biso-db
+    plan: free
+    databaseName: delivery_db
+    user: biso
+
+services:
+  - type: web
+    name: biso-api
+    runtime: node
+    plan: free
+    healthCheckPath: /health
+    buildCommand: npm ci && npx prisma generate && npm run build
+    preDeployCommand: npx prisma db push
+    startCommand: node dist/src/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: biso-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: DB_POOL_MAX
+        value: "5"
+      - key: UPLOAD_DIR
+        value: public/uploads
+      - key: PUBLIC_UPLOAD_URL
+        value: /uploads
+      - key: ALLOW_TEST_OTP
+        value: "false"
+      - key: THROTTLE_DEFAULT_LIMIT
+        value: "120"
+      - key: THROTTLE_DEFAULT_TTL_MS
+        value: "60000"
+      - key: CORS_ORIGINS
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_VERIFY_SERVICE_SID
+        sync: false
+      - key: TWILIO_FROM_NUMBER
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
