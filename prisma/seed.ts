@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { PrismaClient, DeliveryStatus, UserRole } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcrypt';
+import { Pool } from 'pg';
 import {
   CUISINE_TYPES,
   DEMO_CLIENT,
@@ -21,8 +22,15 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is not defined');
 }
 
+const pool = new Pool({
+  connectionString,
+  ssl: connectionString.includes('render.com')
+    ? { rejectUnauthorized: false }
+    : undefined,
+});
+
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString }),
+  adapter: new PrismaPg(pool),
 });
 
 async function main() {
@@ -105,6 +113,82 @@ async function main() {
       phoneVerified: true,
     },
   });
+
+  const adminPassword = await bcrypt.hash('Admin123!', 10);
+  await prisma.user.upsert({
+    where: { id: SEED_IDS.admin },
+    create: {
+      id: SEED_IDS.admin,
+      firstName: 'Admin',
+      lastName: 'Biso',
+      phone: '+242065644299',
+      email: 'admin@biso.cg',
+      password: adminPassword,
+      role: UserRole.ADMIN,
+      phoneVerified: true,
+    },
+    update: {
+      firstName: 'Admin',
+      lastName: 'Biso',
+      password: adminPassword,
+      role: UserRole.ADMIN,
+      phoneVerified: true,
+    },
+  });
+
+  const passwordHash = await bcrypt.hash('Driver123!', 10);
+
+  for (const driver of DRIVER_USERS) {
+    await prisma.user.upsert({
+      where: { id: driver.id },
+      create: {
+        id: driver.id,
+        firstName: driver.firstName,
+        lastName: driver.lastName,
+        phone: driver.phone,
+        password: passwordHash,
+        role: UserRole.DRIVER,
+        phoneVerified: true,
+      },
+      update: {
+        firstName: driver.firstName,
+        lastName: driver.lastName,
+        phone: driver.phone,
+        role: UserRole.DRIVER,
+        phoneVerified: true,
+      },
+    });
+
+    await prisma.driverProfile.upsert({
+      where: { id: driver.profileId },
+      create: {
+        id: driver.profileId,
+        userId: driver.id,
+        vehicleType: driver.vehicleType,
+        isAvailable: true,
+        rating: driver.rating,
+        reviewCount: 12,
+      },
+      update: {
+        vehicleType: driver.vehicleType,
+        isAvailable: true,
+        rating: driver.rating,
+      },
+    });
+
+    await prisma.driverLocation.upsert({
+      where: { driverId: driver.id },
+      create: {
+        driverId: driver.id,
+        latitude: driver.lat,
+        longitude: driver.lng,
+      },
+      update: {
+        latitude: driver.lat,
+        longitude: driver.lng,
+      },
+    });
+  }
 
   function daysAgo(days: number): Date {
     const date = new Date();
@@ -304,82 +388,6 @@ async function main() {
     },
   });
 
-  const adminPassword = await bcrypt.hash('Admin123!', 10);
-  await prisma.user.upsert({
-    where: { id: SEED_IDS.admin },
-    create: {
-      id: SEED_IDS.admin,
-      firstName: 'Admin',
-      lastName: 'Biso',
-      phone: '+242065644299',
-      email: 'admin@biso.cg',
-      password: adminPassword,
-      role: UserRole.ADMIN,
-      phoneVerified: true,
-    },
-    update: {
-      firstName: 'Admin',
-      lastName: 'Biso',
-      password: adminPassword,
-      role: UserRole.ADMIN,
-      phoneVerified: true,
-    },
-  });
-
-  const passwordHash = await bcrypt.hash('Driver123!', 10);
-
-  for (const driver of DRIVER_USERS) {
-    await prisma.user.upsert({
-      where: { id: driver.id },
-      create: {
-        id: driver.id,
-        firstName: driver.firstName,
-        lastName: driver.lastName,
-        phone: driver.phone,
-        password: passwordHash,
-        role: UserRole.DRIVER,
-        phoneVerified: true,
-      },
-      update: {
-        firstName: driver.firstName,
-        lastName: driver.lastName,
-        phone: driver.phone,
-        role: UserRole.DRIVER,
-        phoneVerified: true,
-      },
-    });
-
-    await prisma.driverProfile.upsert({
-      where: { id: driver.profileId },
-      create: {
-        id: driver.profileId,
-        userId: driver.id,
-        vehicleType: driver.vehicleType,
-        isAvailable: true,
-        rating: driver.rating,
-        reviewCount: 12,
-      },
-      update: {
-        vehicleType: driver.vehicleType,
-        isAvailable: true,
-        rating: driver.rating,
-      },
-    });
-
-    await prisma.driverLocation.upsert({
-      where: { driverId: driver.id },
-      create: {
-        driverId: driver.id,
-        latitude: driver.lat,
-        longitude: driver.lng,
-      },
-      update: {
-        latitude: driver.lat,
-        longitude: driver.lng,
-      },
-    });
-  }
-
   console.log('Seed completed (CMS, restaurants, menus, produits simples, commandes demo, livreurs).');
 }
 
@@ -388,4 +396,7 @@ main()
     console.error(error);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+    await pool.end();
+  });
