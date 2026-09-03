@@ -4,14 +4,19 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Parcel, ParcelStatus, UserRole } from '@prisma/client';
+import { Parcel, ParcelStatus, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { DeliveriesService } from '../deliveries/deliveries.service';
 import { CreateParcelInput } from './dto/create-parcel.input';
+import { SearchParcelsInput } from './dto/search-parcels.input';
 import { PaginationArgs } from '../../common/dto/pagination.args';
 import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
 
-const parcelInclude = { sender: true } as const;
+const parcelInclude = {
+  sender: true,
+  delivery: { include: { driver: true } },
+} as const;
 
 const ALLOWED_TRANSITIONS: Record<ParcelStatus, ParcelStatus[]> = {
   [ParcelStatus.PENDING]: [ParcelStatus.PICKED_UP, ParcelStatus.CANCELLED],
@@ -23,7 +28,10 @@ const ALLOWED_TRANSITIONS: Record<ParcelStatus, ParcelStatus[]> = {
 
 @Injectable()
 export class ParcelsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly deliveriesService: DeliveriesService,
+  ) {}
 
   create(data: CreateParcelInput, senderId: string): Promise<Parcel> {
     return this.prisma.parcel.create({
@@ -36,18 +44,48 @@ export class ParcelsService {
     });
   }
 
-  findAll(pagination: PaginationArgs): Promise<PaginatedResult<Parcel>> {
+  findAll(
+    pagination: PaginationArgs,
+    input?: SearchParcelsInput,
+  ): Promise<PaginatedResult<Parcel>> {
+    const where = this.buildSearchWhere(input);
+
     return paginate(
       (args) =>
         this.prisma.parcel.findMany({
+          where,
           include: parcelInclude,
           orderBy: { createdAt: 'desc' },
           skip: args.skip,
           take: args.take,
         }),
-      () => this.prisma.parcel.count(),
+      () => this.prisma.parcel.count({ where }),
       pagination,
     );
+  }
+
+  private buildSearchWhere(input?: SearchParcelsInput): Prisma.ParcelWhereInput {
+    if (!input) return {};
+
+    const where: Prisma.ParcelWhereInput = {};
+
+    if (input.status) {
+      where.status = input.status;
+    }
+
+    if (input.from || input.to) {
+      where.createdAt = {};
+      if (input.from) {
+        where.createdAt.gte = new Date(input.from);
+      }
+      if (input.to) {
+        const to = new Date(input.to);
+        to.setUTCHours(23, 59, 59, 999);
+        where.createdAt.lte = to;
+      }
+    }
+
+    return where;
   }
 
   myParcels(
@@ -124,6 +162,22 @@ export class ParcelsService {
         status,
         deliveredAt: status === ParcelStatus.DELIVERED ? new Date() : undefined,
       },
+      include: parcelInclude,
+    });
+  }
+
+  async assignDriver(parcelId: string, driverId: string) {
+    await this.deliveriesService.assignToParcel(parcelId, driverId);
+    return this.prisma.parcel.findUniqueOrThrow({
+      where: { id: parcelId },
+      include: parcelInclude,
+    });
+  }
+
+  async assignAvailableDriver(parcelId: string) {
+    await this.deliveriesService.assignAvailableDriverToParcel(parcelId);
+    return this.prisma.parcel.findUniqueOrThrow({
+      where: { id: parcelId },
       include: parcelInclude,
     });
   }

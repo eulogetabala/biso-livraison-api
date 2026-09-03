@@ -1,0 +1,26 @@
+import { Field, InputType } from '@nestjs/graphql';
+import { IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
+
+@InputType()
+export class ResetPasswordInput {
+  @Field()
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^\+?[0-9\s.-]{6,20}$/, {
+    message: 'phone must be a valid phone number',
+  })
+  phone: string;
+
+  @Field()
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^\d{4,8}$/, {
+    message: 'code must contain only digits',
+  })
+  code: string;
+
+  @Field()
+  @IsString()
+  @MinLength(6)
+  password: string;
+}

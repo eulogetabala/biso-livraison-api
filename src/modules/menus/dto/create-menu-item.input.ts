@@ -1,21 +1,29 @@
-import { Field, ID, InputType } from '@nestjs/graphql';
-import { MenuItemCategory } from '@prisma/client';
+import { Field, ID, InputType, Int } from '@nestjs/graphql';
+import { MenuItemCategory, MenuItemKind } from '@prisma/client';
 import {
   IsBoolean,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 @InputType()
 export class CreateMenuItemInput {
-  @Field(() => ID)
+  @Field(() => MenuItemKind, { nullable: true, defaultValue: MenuItemKind.RESTAURANT_DISH })
+  @IsOptional()
+  @IsEnum(MenuItemKind)
+  kind?: MenuItemKind;
+
+  @Field(() => ID, { nullable: true })
+  @ValidateIf((o: CreateMenuItemInput) => o.kind !== MenuItemKind.SIMPLE_PRODUCT)
   @IsUUID()
-  restaurantId: string;
+  restaurantId?: string;
 
   @Field()
   @IsString()
@@ -45,4 +53,30 @@ export class CreateMenuItemInput {
   @IsOptional()
   @IsBoolean()
   isAvailable?: boolean;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  seller?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  badge?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  sortOrder?: number;
+
+  @Field(() => ID, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  marketCategoryId?: string;
 }

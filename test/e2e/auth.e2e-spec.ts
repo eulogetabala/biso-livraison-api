@@ -54,14 +54,14 @@ describe('Auth & OTP (e2e)', () => {
       const body = await gql<{
         login: {
           accessToken: string;
-          user: { phone: string; firstName: string };
+          user: { phone: string; firstName: string; createdAt: string; updatedAt: string };
         };
       }>(
         app,
         `mutation Login($input: LoginInput!) {
           login(input: $input) {
             accessToken
-            user { id phone firstName lastName role }
+            user { id phone firstName lastName role createdAt updatedAt }
           }
         }`,
         { input: { phone, password } },
@@ -70,6 +70,8 @@ describe('Auth & OTP (e2e)', () => {
       expect(body.data.login.accessToken).toBeTruthy();
       expect(body.data.login.user.phone).toBe(phone);
       expect(body.data.login.user.firstName).toBe('E2E');
+      expect(body.data.login.user.createdAt).toBeTruthy();
+      expect(body.data.login.user.updatedAt).toBeTruthy();
     });
 
     it('login avec mauvais mot de passe → erreur', async () => {

@@ -17,22 +17,37 @@ const REVENUE_STATUSES: OrderStatus[] = [
 export class StatisticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async overview() {
+  async overview(range: StatisticsRangeInput = {}) {
+    const dateWhere = this.dateRangeWhere(range);
+    const revenueWhere: Prisma.OrderWhereInput = {
+      status: { in: REVENUE_STATUSES },
+      ...dateWhere,
+    };
+    const ordersWhere: Prisma.OrderWhereInput = { ...dateWhere };
+
     const [
       totalOrders,
       revenueAgg,
+      revenueOrderCount,
       activeRestaurants,
       activeDrivers,
       pendingOrders,
+      totalDriverProfiles,
+      availableDriverProfiles,
     ] = await Promise.all([
-      this.prisma.order.count(),
+      this.prisma.order.count({ where: ordersWhere }),
       this.prisma.order.aggregate({
-        where: { status: { in: REVENUE_STATUSES } },
+        where: revenueWhere,
         _sum: { grandTotal: true },
       }),
+      this.prisma.order.count({ where: revenueWhere }),
       this.prisma.restaurant.count({ where: { isActive: true } }),
       this.prisma.user.count({ where: { role: 'DRIVER' } }),
-      this.prisma.order.count({ where: { status: OrderStatus.PENDING } }),
+      this.prisma.order.count({
+        where: { status: OrderStatus.PENDING, ...dateWhere },
+      }),
+      this.prisma.driverProfile.count(),
+      this.prisma.driverProfile.count({ where: { isAvailable: true } }),
     ]);
 
     const totalRevenue = revenueAgg._sum.grandTotal ?? 0;
@@ -40,10 +55,13 @@ export class StatisticsService {
     return {
       totalOrders,
       totalRevenue,
-      averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+      averageOrderValue:
+        revenueOrderCount > 0 ? totalRevenue / revenueOrderCount : 0,
       activeRestaurants,
       activeDrivers,
       pendingOrders,
+      totalDriverProfiles,
+      availableDriverProfiles,
     };
   }
 
@@ -76,9 +94,12 @@ export class StatisticsService {
     }));
   }
 
-  async ordersByStatus() {
+  async ordersByStatus(range: StatisticsRangeInput = {}) {
+    const where = this.dateRangeWhere(range);
+
     const groups = await this.prisma.order.groupBy({
       by: ['status'],
+      where,
       _count: { _all: true },
     });
 
@@ -121,10 +142,14 @@ export class StatisticsService {
 
   async topRestaurants(input: TopRestaurantsInput) {
     const limit = input.limit ?? 5;
+    const range: StatisticsRangeInput = { from: input.from, to: input.to };
 
     const rows = await this.prisma.order.groupBy({
       by: ['restaurantId'],
-      where: { status: { in: REVENUE_STATUSES } },
+      where: {
+        status: { in: REVENUE_STATUSES },
+        ...this.dateRangeWhere(range),
+      },
       _sum: { grandTotal: true },
       _count: { _all: true },
       orderBy: { _sum: { grandTotal: 'desc' } },

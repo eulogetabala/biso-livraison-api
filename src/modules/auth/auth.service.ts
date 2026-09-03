@@ -14,6 +14,8 @@ export interface LoginResult {
     phone: string;
     avatarUrl: string | null;
     role: string;
+    createdAt: Date;
+    updatedAt: Date;
   };
 }
 
@@ -46,6 +48,8 @@ export class AuthService {
         phone: user.phone,
         avatarUrl: user.avatarUrl,
         role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
     };
   }
@@ -63,6 +67,10 @@ export class AuthService {
 
     if (!passwordValid) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.isBlocked) {
+      throw new UnauthorizedException('Account blocked');
     }
 
     return user;

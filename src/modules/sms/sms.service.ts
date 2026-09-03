@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import twilio from 'twilio';
 import { AppConfig } from '../../config/configuration';
+import { normalizePhoneE164 } from '../../common/utils/phone.util';
 
 /**
  * Service d'accès à Twilio.
@@ -83,7 +84,7 @@ export class SmsService implements OnModuleInit {
 
   /**
    * Déclenche l'envoi d'un code OTP via Twilio Verify (SMS ou WhatsApp selon
-   * la configuration du service). Ne lève pas d'erreur en mode dev.
+   * la configuration du service).
    */
   async sendVerification(phone: string): Promise<void> {
     if (!this.client || !this.verifyServiceSid) {
@@ -91,18 +92,37 @@ export class SmsService implements OnModuleInit {
       return;
     }
 
+    const to = this.formatE164(phone);
     try {
       const verification = await this.client.verify.v2
         .services(this.verifyServiceSid)
-        .verifications.create({ to: this.formatE164(phone), channel: 'sms' });
-      this.logger.log(`OTP envoyé à ${phone} (sid ${verification.sid})`);
+        .verifications.create({ to, channel: 'sms' });
+      this.logger.log(`OTP envoyé à ${to} (sid ${verification.sid})`);
     } catch (err) {
-      this.logger.error(
-        `Échec d'envoi de l'OTP à ${phone} : ${
-          err instanceof Error ? err.message : String(err)
-        }`,
+      const message = this.mapVerificationSendError(err, to);
+      this.logger.error(`Échec d'envoi de l'OTP à ${to} : ${message}`);
+      throw new BadRequestException(message);
+    }
+  }
+
+  private mapVerificationSendError(err: unknown, phone: string): string {
+    const raw = err instanceof Error ? err.message : String(err);
+    if (raw.includes('Invalid parameter') && raw.includes('To')) {
+      return (
+        `Le numéro ${phone} n'est pas valide pour l'envoi SMS. ` +
+        'Vérifiez le format congolais (ex. 06 XXX XX XX).'
       );
     }
+    if (raw.includes('21608') || raw.includes('unverified')) {
+      return (
+        'Ce numéro n\'est pas autorisé à recevoir des SMS de test. ' +
+        'Vérifiez qu\'il est enregistré dans votre compte Twilio.'
+      );
+    }
+    if (raw.includes('60203') || raw.includes('Max send attempts')) {
+      return 'Trop de demandes de code. Réessayez dans quelques minutes.';
+    }
+    return 'Impossible d\'envoyer le SMS. Réessayez plus tard.';
   }
 
   /**
@@ -169,8 +189,6 @@ export class SmsService implements OnModuleInit {
 
   /** Normalise un numéro au format E.164 (requis par Twilio). */
   private formatE164(phone: string): string {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.startsWith('242')) return `+${digits}`;
-    return `+242${digits}`;
+    return normalizePhoneE164(phone);
   }
 }

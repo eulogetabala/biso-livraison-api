@@ -23,8 +23,10 @@ export class StatisticsResolver {
   constructor(private readonly statisticsService: StatisticsService) {}
 
   @Query(() => StatisticsOverviewModel)
-  statisticsOverview() {
-    return this.statisticsService.overview();
+  statisticsOverview(
+    @Args('range', { nullable: true }) range?: StatisticsRangeInput,
+  ) {
+    return this.statisticsService.overview(range ?? {});
   }
 
   @Query(() => [RevenueByRestaurantModel])
@@ -35,8 +37,10 @@ export class StatisticsResolver {
   }
 
   @Query(() => [OrdersByStatusModel])
-  ordersByStatus() {
-    return this.statisticsService.ordersByStatus();
+  ordersByStatus(
+    @Args('range', { nullable: true }) range?: StatisticsRangeInput,
+  ) {
+    return this.statisticsService.ordersByStatus(range ?? {});
   }
 
   @Query(() => [DailyOrdersModel])

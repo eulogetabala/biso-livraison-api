@@ -1,6 +1,9 @@
-import { Field, InputType } from '@nestjs/graphql';
+import { Field, InputType, Int } from '@nestjs/graphql';
+import { RestaurantType } from '@prisma/client';
 import {
   IsBoolean,
+  IsEnum,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -84,4 +87,29 @@ export class CreateRestaurantInput {
   @Min(0)
   @Max(5)
   rating?: number;
+
+  @Field(() => RestaurantType, { nullable: true })
+  @IsOptional()
+  @IsEnum(RestaurantType)
+  type?: RestaurantType;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  sortOrder?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
 }

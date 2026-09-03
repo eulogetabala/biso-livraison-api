@@ -13,8 +13,11 @@ export class DeliveryModel {
   @Field(() => ID)
   id: string;
 
-  @Field(() => ID)
-  orderId: string;
+  @Field(() => ID, { nullable: true })
+  orderId?: string;
+
+  @Field(() => ID, { nullable: true })
+  parcelId?: string;
 
   @Field(() => ID)
   driverId: string;

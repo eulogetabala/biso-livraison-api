@@ -2,6 +2,30 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type ActiveDeliveryTrackingModel {
+  clientFirstName: String!
+  clientLastName: String!
+  deliveryAddress: String!
+  deliveryCity: String!
+  deliveryId: ID!
+  deliveryLatitude: Float
+  deliveryLongitude: Float
+  deliveryStatus: DeliveryStatus!
+  driverFirstName: String!
+  driverId: ID!
+  driverLastName: String!
+  driverLatitude: Float
+  driverLongitude: Float
+  driverPhone: String
+  locationUpdatedAt: DateTime
+  orderId: ID
+  orderStatus: OrderStatus
+  parcelId: ID
+  restaurantLatitude: Float
+  restaurantLongitude: Float
+  restaurantName: String!
+}
+
 input AddTrackingEventInput {
   deliveryId: ID!
   latitude: Float
@@ -10,24 +34,73 @@ input AddTrackingEventInput {
   status: DeliveryStatus!
 }
 
+input AdminCreateDriverInput {
+  firstName: String!
+  isAvailable: Boolean = false
+  lastName: String!
+  password: String!
+  phone: String!
+  vehiclePlate: String
+  vehicleType: String = "MOTO"
+}
+
+input AdminSetDriverAvailabilityInput {
+  driverId: ID!
+  isAvailable: Boolean!
+}
+
+input AdminSetUserBlockedInput {
+  isBlocked: Boolean!
+  userId: ID!
+}
+
 input AssignDriverInput {
   driverId: ID!
   orderId: ID!
 }
 
+input AssignDriverToParcelInput {
+  driverId: ID!
+  parcelId: ID!
+}
+
+"""Destination when user taps a home banner CTA"""
+enum BannerLinkType {
+  NONE
+  PARCEL
+  PRODUCTS
+  RESTAURANTS
+  URL
+}
+
+type CatalogStatsModel {
+  menuDishes: Int!
+  restaurants: Int!
+  simpleProducts: Int!
+  supplements: Int!
+}
+
 input CreateMenuItemInput {
+  badge: String
   category: MenuItemCategory!
   description: String
   imageUrl: String
   isAvailable: Boolean
+  isFeatured: Boolean
+  kind: MenuItemKind = RESTAURANT_DISH
+  marketCategoryId: ID
   name: String!
   price: Float!
-  restaurantId: ID!
+  restaurantId: ID
+  seller: String
+  sortOrder: Float
 }
 
 input CreateOrderInput {
   deliveryAddress: String!
   deliveryCity: String!
+  deliveryLatitude: Float
+  deliveryLongitude: Float
   deliveryZipCode: String!
   items: [CreateOrderItemInput!]!
   paymentMethod: PaymentMethod = CASH_ON_DELIVERY
@@ -57,9 +130,14 @@ input CreateRestaurantInput {
   estimatedDeliveryTime: Float = 30
   imageUrl: String
   isActive: Boolean
+  isFeatured: Boolean
+  latitude: Float
+  longitude: Float
   name: String!
   phone: String!
   rating: Float
+  sortOrder: Int
+  type: RestaurantType
   zipCode: String!
 }
 
@@ -80,10 +158,26 @@ input CreateUserInput {
   phoneVerified: Boolean! = false
 }
 
+type CuisineTypeConfigModel {
+  createdAt: DateTime!
+  emoji: String
+  id: ID!
+  isActive: Boolean!
+  label: String!
+  sortOrder: Float!
+  updatedAt: DateTime!
+  value: String!
+}
+
 type DailyOrdersModel {
   date: String!
   orders: Int!
   revenue: Float!
+}
+
+type DailyUserRegistrationsModel {
+  count: Int!
+  date: String!
 }
 
 """
@@ -98,7 +192,8 @@ type DeliveryModel {
   driverId: ID!
   id: ID!
   order: OrderModel
-  orderId: ID!
+  orderId: ID
+  parcelId: ID
   pickedUpAt: DateTime
   status: DeliveryStatus!
   updatedAt: DateTime!
@@ -134,6 +229,40 @@ type DriverModel {
   vehicleType: String!
 }
 
+"""Type of favorited item"""
+enum FavoriteKind {
+  PRODUCT
+  RESTAURANT
+}
+
+type FavoriteModel {
+  city: String
+  createdAt: DateTime!
+  cuisineType: String
+  id: ID!
+  imageUrl: String
+  kind: FavoriteKind!
+  name: String!
+  price: Float
+  rating: Float
+  seller: String
+  targetId: ID!
+}
+
+type HomeBannerModel {
+  createdAt: DateTime!
+  ctaLabel: String
+  id: ID!
+  imageUrl: String!
+  isActive: Boolean!
+  linkType: BannerLinkType!
+  linkValue: String
+  sortOrder: Float!
+  subtitle: String
+  title: String!
+  updatedAt: DateTime!
+}
+
 input LoginInput {
   password: String!
   phone: String!
@@ -148,6 +277,21 @@ input MarkNotificationReadInput {
   id: ID!
 }
 
+type MarketCategoryModel {
+  createdAt: DateTime!
+  icon: String!
+  iconColor: String!
+  iconLib: String!
+  id: ID!
+  imageUrl: String
+  isActive: Boolean!
+  label: String!
+  sortOrder: Float!
+  subtitle: String
+  tint: String!
+  updatedAt: DateTime!
+}
+
 """Category of a menu item"""
 enum MenuItemCategory {
   APPETIZER
@@ -160,24 +304,54 @@ enum MenuItemCategory {
   SNACK
 }
 
+"""Restaurant dish or standalone simple product"""
+enum MenuItemKind {
+  RESTAURANT_DISH
+  SIMPLE_PRODUCT
+}
+
 type MenuItemModel {
+  badge: String
   category: MenuItemCategory!
   createdAt: DateTime!
   description: String
   id: ID!
   imageUrl: String
   isAvailable: Boolean!
+  isFeatured: Boolean!
+  kind: MenuItemKind!
+  marketCategory: MarketCategoryModel
+  marketCategoryId: ID
   name: String!
   price: Float!
   restaurant: RestaurantModel
-  restaurantId: ID!
+  restaurantId: ID
+  seller: String
+  sortOrder: Int!
+  supplements: [MenuItemSupplementModel!]!
+  updatedAt: DateTime!
+}
+
+type MenuItemSupplementModel {
+  createdAt: DateTime!
+  id: ID!
+  isAvailable: Boolean!
+  menuItemId: ID!
+  name: String!
+  price: Float!
+  sortOrder: Int!
   updatedAt: DateTime!
 }
 
 type Mutation {
   addTrackingEvent(input: AddTrackingEventInput!): TrackingEventModel!
+  adminCreateDriver(input: AdminCreateDriverInput!): DriverModel!
+  adminSetDriverAvailability(input: AdminSetDriverAvailabilityInput!): DriverModel!
+  adminSetUserBlocked(input: AdminSetUserBlockedInput!): UserModel!
   assignAvailableDriver(orderId: ID!): DeliveryModel!
+  assignAvailableDriverToParcel(parcelId: ID!): ParcelModel!
   assignDriver(input: AssignDriverInput!): DeliveryModel!
+  assignDriverToParcel(input: AssignDriverToParcelInput!): ParcelModel!
   cancelOrder(id: ID!): OrderModel!
   collectCashOnDelivery(orderId: ID!): PaymentModel!
   createDriverProfile(userId: ID!, vehiclePlate: String, vehicleType: String): DriverModel!
@@ -187,8 +361,13 @@ type Mutation {
   createRestaurant(input: CreateRestaurantInput!): RestaurantModel!
   createReview(input: CreateReviewInput!): ReviewModel!
   createUser(input: CreateUserInput!): UserModel!
+  deleteCuisineType(id: ID!): CuisineTypeConfigModel!
   deleteDelivery(id: ID!): DeliveryModel!
+  deleteHomeBanner(id: ID!): HomeBannerModel!
+  deleteMarketCategory(id: ID!): MarketCategoryModel!
   deleteMenuItem(id: ID!): MenuItemModel!
+  deleteMenuItemSupplement(id: ID!): MenuItemSupplementModel!
+  deleteMyAccount: UserModel!
   deleteOrder(id: ID!): OrderModel!
   deleteParcel(id: ID!): ParcelModel!
   deleteRestaurant(id: ID!): RestaurantModel!
@@ -196,8 +375,12 @@ type Mutation {
   login(input: LoginInput!): LoginResultModel!
   markAllNotificationsAsRead: Int!
   markNotificationAsRead(input: MarkNotificationReadInput!): NotificationModel!
+  registerPushToken(token: String!): UserModel!
+  removeFavorite(kind: FavoriteKind!, targetId: String!): Boolean!
   requestOtp(input: RequestOtpInput!): OtpRequestResult!
+  resetPassword(input: ResetPasswordInput!): Boolean!
   setDriverAvailability(input: SetDriverAvailabilityInput!): DriverModel!
+  toggleFavorite(input: ToggleFavoriteInput!): FavoriteModel
   updateDeliveryStatus(input: UpdateDeliveryStatusInput!): DeliveryModel!
   updateDriverLocation(input: UpdateDriverLocationInput!): DriverLocationModel!
   updateDriverProfile(input: UpdateDriverProfileInput!): DriverModel!
@@ -207,6 +390,10 @@ type Mutation {
   updateProfile(input: UpdateProfileInput!): UserModel!
   updateRestaurant(input: UpdateRestaurantInput!): RestaurantModel!
   updateReview(input: UpdateReviewInput!): ReviewModel!
+  upsertCuisineType(input: UpsertCuisineTypeInput!): CuisineTypeConfigModel!
+  upsertHomeBanner(input: UpsertHomeBannerInput!): HomeBannerModel!
+  upsertMarketCategory(input: UpsertMarketCategoryInput!): MarketCategoryModel!
+  upsertMenuItemSupplement(input: UpsertMenuItemSupplementInput!): MenuItemSupplementModel!
   verifyOtp(input: VerifyOtpInput!): Boolean!
 }
 
@@ -243,6 +430,8 @@ type OrderModel {
   deliveryAddress: String!
   deliveryCity: String!
   deliveryFee: Float!
+  deliveryLatitude: Float
+  deliveryLongitude: Float
   deliveryZipCode: String!
   grandTotal: Float!
   id: ID!
@@ -322,9 +511,15 @@ type PaginatedReviewModel {
   pageInfo: PageInfo!
 }
 
+type PaginatedUserModel {
+  items: [UserModel!]!
+  pageInfo: PageInfo!
+}
+
 type ParcelModel {
   createdAt: DateTime!
   deliveredAt: DateTime
+  delivery: DeliveryModel
   description: String
   id: ID!
   receiverAddress: String!
@@ -371,30 +566,41 @@ enum PaymentStatus {
 }
 
 type Query {
+  activeCuisineTypes: [CuisineTypeConfigModel!]!
+  activeDeliveriesTracking: [ActiveDeliveryTrackingModel!]!
+  activeHomeBanners: [HomeBannerModel!]!
+  activeMarketCategories: [MarketCategoryModel!]!
+  allCuisineTypes: [CuisineTypeConfigModel!]!
+  allHomeBanners: [HomeBannerModel!]!
+  allMarketCategories: [MarketCategoryModel!]!
   availableDrivers: [DriverModel!]!
+  catalogStats: CatalogStatsModel!
   dailyOrders(range: StatisticsRangeInput): [DailyOrdersModel!]!
+  dailyUserRegistrations(range: UserStatisticsRangeInput): [DailyUserRegistrationsModel!]!
   deliveries(limit: Int = 20, page: Int = 1): PaginatedDeliveryModel!
   deliveryByOrder(orderId: ID!): DeliveryModel!
   driver(id: ID!): DriverModel!
   driverLocation(driverId: ID!): DriverLocationModel!
   driverLocations: [DriverLocationModel!]!
   drivers: [DriverModel!]!
+  marketRestaurant: RestaurantModel
   me: UserModel!
   menuItem(id: ID!): MenuItemModel!
   menuItems(limit: Int = 20, page: Int = 1): PaginatedMenuItemModel!
   menuItemsByRestaurant(limit: Int = 20, page: Int = 1, restaurantId: ID!): PaginatedMenuItemModel!
   myDeliveries(limit: Int = 20, page: Int = 1): PaginatedDeliveryModel!
   myDriverProfile: DriverModel!
+  myFavorites: [FavoriteModel!]!
   myLocation: DriverLocationModel!
   myNotifications(limit: Int = 20, page: Int = 1): PaginatedNotificationModel!
   myOrders(limit: Int = 20, page: Int = 1): PaginatedOrderModel!
   myParcels(limit: Int = 20, page: Int = 1): PaginatedParcelModel!
   myReviews(limit: Int = 20, page: Int = 1): PaginatedReviewModel!
   order(id: ID!): OrderModel!
-  orders(limit: Int = 20, page: Int = 1): PaginatedOrderModel!
-  ordersByStatus: [OrdersByStatusModel!]!
+  orders(input: SearchOrdersInput, limit: Int = 20, page: Int = 1): PaginatedOrderModel!
+  ordersByStatus(range: StatisticsRangeInput): [OrdersByStatusModel!]!
   parcel(id: ID!): ParcelModel!
-  parcels(limit: Int = 20, page: Int = 1): PaginatedParcelModel!
+  parcels(input: SearchParcelsInput, limit: Int = 20, page: Int = 1): PaginatedParcelModel!
   paymentByOrder(orderId: ID!): PaymentModel!
   payments: [PaymentModel!]!
   restaurant(id: ID!): RestaurantModel!
@@ -406,15 +612,23 @@ type Query {
   reviewsByRestaurant(limit: Int = 20, page: Int = 1, restaurantId: ID!): PaginatedReviewModel!
   searchMenuItems(input: SearchMenuItemsInput, limit: Int = 20, page: Int = 1): PaginatedMenuItemModel!
   searchRestaurants(input: SearchRestaurantsInput, limit: Int = 20, page: Int = 1): PaginatedRestaurantModel!
-  statisticsOverview: StatisticsOverviewModel!
+  statisticsOverview(range: StatisticsRangeInput): StatisticsOverviewModel!
   topRestaurants(input: TopRestaurantsInput): [RevenueByRestaurantModel!]!
   trackDelivery(orderId: ID!): DriverLocationModel!
   trackingByDelivery(deliveryId: ID!): [TrackingEventModel!]!
   unreadNotificationsCount: Int!
+  userStatisticsOverview(range: UserStatisticsRangeInput): UserStatisticsOverviewModel!
   users: [UserModel!]!
+  usersPaginated(input: SearchUsersInput, limit: Int = 20, page: Int = 1): PaginatedUserModel!
 }
 
 input RequestOtpInput {
+  phone: String!
+}
+
+input ResetPasswordInput {
+  code: String!
+  password: String!
   phone: String!
 }
 
@@ -430,11 +644,22 @@ type RestaurantModel {
   id: ID!
   imageUrl: String
   isActive: Boolean!
+  isFeatured: Boolean!
+  latitude: Float
+  longitude: Float
   name: String!
   phone: String!
   rating: Float!
+  sortOrder: Int!
+  type: RestaurantType!
   updatedAt: DateTime!
   zipCode: String!
+}
+
+"""Restaurant business type"""
+enum RestaurantType {
+  MARKET
+  RESTAURANT
 }
 
 type RevenueByRestaurantModel {
@@ -462,17 +687,47 @@ type ReviewModel {
 
 input SearchMenuItemsInput {
   category: MenuItemCategory
+  featuredOnly: Boolean
+  kind: MenuItemKind
+  marketCategoryId: ID
   onlyAvailable: Boolean = true
   query: String
+  restaurantDishesOnly: Boolean
   restaurantId: ID
+  simpleProductsOnly: Boolean
+}
+
+input SearchOrdersInput {
+  from: String
+  restaurantType: RestaurantType
+  status: OrderStatus
+  to: String
+}
+
+input SearchParcelsInput {
+  from: String
+  status: ParcelStatus
+  to: String
 }
 
 input SearchRestaurantsInput {
   city: String
   cuisineType: String
+  excludeMarket: Boolean
+  featuredOnly: Boolean
   minRating: Float
   onlyActive: Boolean = true
   query: String
+  type: RestaurantType
+}
+
+input SearchUsersInput {
+  from: String
+  isBlocked: Boolean
+  phoneVerified: Boolean
+  role: UserRole
+  search: String
+  to: String
 }
 
 input SetDriverAvailabilityInput {
@@ -482,8 +737,10 @@ input SetDriverAvailabilityInput {
 type StatisticsOverviewModel {
   activeDrivers: Int!
   activeRestaurants: Int!
+  availableDriverProfiles: Int!
   averageOrderValue: Float!
   pendingOrders: Int!
+  totalDriverProfiles: Int!
   totalOrders: Int!
   totalRevenue: Float!
 }
@@ -493,8 +750,22 @@ input StatisticsRangeInput {
   to: String
 }
 
+input ToggleFavoriteInput {
+  city: String
+  cuisineType: String
+  imageUrl: String
+  kind: FavoriteKind!
+  name: String!
+  price: Float
+  rating: Float
+  seller: String
+  targetId: ID!
+}
+
 input TopRestaurantsInput {
+  from: String
   limit: Int = 5
+  to: String
 }
 
 type TrackingEventModel {
@@ -525,14 +796,20 @@ input UpdateDriverProfileInput {
 }
 
 input UpdateMenuItemInput {
+  badge: String
   category: MenuItemCategory
   description: String
   id: String!
   imageUrl: String
   isAvailable: Boolean
+  isFeatured: Boolean
+  kind: MenuItemKind = RESTAURANT_DISH
+  marketCategoryId: ID
   name: String
   price: Float
   restaurantId: ID
+  seller: String
+  sortOrder: Float
 }
 
 input UpdateOrderStatusInput {
@@ -565,9 +842,14 @@ input UpdateRestaurantInput {
   id: String!
   imageUrl: String
   isActive: Boolean
+  isFeatured: Boolean
+  latitude: Float
+  longitude: Float
   name: String
   phone: String
   rating: Float
+  sortOrder: Int
+  type: RestaurantType
   zipCode: String
 }
 
@@ -580,16 +862,82 @@ input UpdateReviewInput {
   restaurantId: ID
 }
 
+input UpsertCuisineTypeInput {
+  emoji: String
+  id: ID
+  isActive: Boolean
+  label: String!
+  sortOrder: Int
+  value: String!
+}
+
+input UpsertHomeBannerInput {
+  ctaLabel: String
+  id: ID
+  imageUrl: String!
+  isActive: Boolean
+  linkType: BannerLinkType
+  linkValue: String
+  sortOrder: Int
+  subtitle: String
+  title: String!
+}
+
+input UpsertMarketCategoryInput {
+  icon: String
+  iconColor: String
+  iconLib: String
+  id: ID
+  imageUrl: String
+  isActive: Boolean
+  label: String!
+  sortOrder: Int
+  subtitle: String
+  tint: String
+}
+
+input UpsertMenuItemSupplementInput {
+  id: ID
+  isAvailable: Boolean
+  menuItemId: ID!
+  name: String!
+  price: Float!
+  sortOrder: Float
+}
+
 type UserModel {
   avatarUrl: String
   createdAt: DateTime!
   email: String
   firstName: String!
   id: ID!
+  isBlocked: Boolean!
   lastName: String!
   phone: String!
-  role: String!
+  phoneVerified: Boolean!
+  role: UserRole!
   updatedAt: DateTime!
+}
+
+"""Rôle utilisateur (client, livreur, admin…)"""
+enum UserRole {
+  ADMIN
+  CLIENT
+  DRIVER
+  PARTNER
+}
+
+type UserStatisticsOverviewModel {
+  blockedClients: Int!
+  newRegistrations: Int!
+  pendingOtp: Int!
+  totalClients: Int!
+  verifiedRegistrations: Int!
+}
+
+input UserStatisticsRangeInput {
+  from: String
+  to: String
 }
 
 input VerifyOtpInput {

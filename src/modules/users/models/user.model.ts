@@ -1,5 +1,10 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
+
+registerEnumType(UserRole, {
+  name: 'UserRole',
+  description: 'Rôle utilisateur (client, livreur, admin…)',
+});
 
 @ObjectType()
 export class UserModel {
@@ -18,10 +23,16 @@ export class UserModel {
   @Field()
   phone: string;
 
+  @Field()
+  phoneVerified: boolean;
+
+  @Field()
+  isBlocked: boolean;
+
   @Field({ nullable: true })
   avatarUrl?: string;
 
-  @Field(() => String)
+  @Field(() => UserRole)
   role: UserRole;
 
   @Field()

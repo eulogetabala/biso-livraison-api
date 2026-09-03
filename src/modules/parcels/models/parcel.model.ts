@@ -7,6 +7,7 @@ import {
 } from '@nestjs/graphql';
 import { ParcelStatus } from '@prisma/client';
 import { UserModel } from '../../users/models/user.model';
+import { DeliveryModel } from '../../deliveries/models/delivery.model';
 
 registerEnumType(ParcelStatus, {
   name: 'ParcelStatus',
@@ -44,6 +45,9 @@ export class ParcelModel {
 
   @Field(() => UserModel, { nullable: true })
   sender?: UserModel;
+
+  @Field(() => DeliveryModel, { nullable: true })
+  delivery?: DeliveryModel;
 
   @Field()
   createdAt: Date;

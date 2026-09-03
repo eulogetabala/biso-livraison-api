@@ -13,6 +13,11 @@ export interface AppConfig {
   };
   database: {
     url: string;
+    poolMax: number;
+  };
+  throttler: {
+    defaultLimit: number;
+    defaultTtlMs: number;
   };
   jwt: {
     secret: string;
@@ -66,6 +71,11 @@ export default (): AppConfig => {
     },
     database: {
       url: process.env.DATABASE_URL ?? '',
+      poolMax: parseInt(process.env.DB_POOL_MAX ?? '10', 10),
+    },
+    throttler: {
+      defaultLimit: parseInt(process.env.THROTTLE_DEFAULT_LIMIT ?? '120', 10),
+      defaultTtlMs: parseInt(process.env.THROTTLE_DEFAULT_TTL_MS ?? '60000', 10),
     },
     jwt: {
       secret: jwtSecret,
@@ -94,7 +104,9 @@ export default (): AppConfig => {
       fromNumber: process.env.TWILIO_FROM_NUMBER ?? '',
       verifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID ?? '',
       verifyFriendlyName: process.env.TWILIO_VERIFY_FRIENDLY_NAME ?? 'Biso Livraison',
-      allowTestOtp: (process.env.ALLOW_TEST_OTP ?? 'false') === 'true',
+      allowTestOtp:
+        process.env.ALLOW_TEST_OTP === 'true' ||
+        (process.env.NODE_ENV ?? 'development') !== 'production',
     },
     uploads: {
       directory: process.env.UPLOAD_DIR ?? 'public/uploads',

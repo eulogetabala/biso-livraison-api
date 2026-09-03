@@ -19,6 +19,7 @@ describe('Health (e2e)', () => {
     expect(res.body).toMatchObject({
       status: 'ok',
       service: 'biso-livraison-api',
+      database: 'ok',
     });
     expect(res.body.timestamp).toBeDefined();
     expect(res.body.version).toBeDefined();

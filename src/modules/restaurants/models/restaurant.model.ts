@@ -1,4 +1,10 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { RestaurantType } from '@prisma/client';
+
+registerEnumType(RestaurantType, {
+  name: 'RestaurantType',
+  description: 'Restaurant business type',
+});
 
 @ObjectType()
 export class RestaurantModel {
@@ -38,11 +44,26 @@ export class RestaurantModel {
   @Field()
   rating: number;
 
+  @Field(() => RestaurantType)
+  type: RestaurantType;
+
+  @Field()
+  isFeatured: boolean;
+
+  @Field(() => Int)
+  sortOrder: number;
+
   @Field()
   deliveryFee: number;
 
   @Field()
   estimatedDeliveryTime: number;
+
+  @Field({ nullable: true })
+  latitude?: number;
+
+  @Field({ nullable: true })
+  longitude?: number;
 
   @Field()
   createdAt: Date;

@@ -5,7 +5,10 @@ import {
   IsArray,
   IsEnum,
   IsInt,
+  IsLatitude,
+  IsLongitude,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -63,4 +66,16 @@ export class CreateOrderInput {
   @IsOptional()
   @IsEnum(PaymentMethod)
   paymentMethod?: PaymentMethod;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @IsLatitude({ message: 'deliveryLatitude must be between -90 and 90' })
+  deliveryLatitude?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @IsLongitude({ message: 'deliveryLongitude must be between -180 and 180' })
+  deliveryLongitude?: number;
 }

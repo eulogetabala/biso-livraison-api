@@ -1,18 +1,32 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { MenuItem, Prisma } from '@prisma/client';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { MenuItem, MenuItemKind, Prisma, RestaurantType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMenuItemInput } from './dto/create-menu-item.input';
 import { UpdateMenuItemInput } from './dto/update-menu-item.input';
 import { SearchMenuItemsInput } from './dto/search-menu-items.input';
+import { UpsertMenuItemSupplementInput } from './dto/upsert-menu-item-supplement.input';
 import { PaginationArgs } from '../../common/dto/pagination.args';
 import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
+
+const menuItemInclude = {
+  restaurant: true,
+  marketCategory: true,
+  supplements: {
+    orderBy: [{ sortOrder: 'asc' as const }, { name: 'asc' as const }],
+  },
+} satisfies Prisma.MenuItemInclude;
 
 @Injectable()
 export class MenusService {
   constructor(private readonly prisma: PrismaService) {}
 
   create(data: CreateMenuItemInput): Promise<MenuItem> {
-    return this.prisma.menuItem.create({ data });
+    const payload = this.normalizeCreateInput(data);
+    return this.prisma.menuItem.create({ data: payload, include: menuItemInclude });
   }
 
   search(
@@ -25,8 +39,8 @@ export class MenusService {
       (args) =>
         this.prisma.menuItem.findMany({
           where,
-          include: { restaurant: true },
-          orderBy: { name: 'asc' },
+          include: menuItemInclude,
+          orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }, { name: 'asc' }],
           skip: args.skip,
           take: args.take,
         }),
@@ -39,6 +53,7 @@ export class MenusService {
     return paginate(
       (args) =>
         this.prisma.menuItem.findMany({
+          include: menuItemInclude,
           orderBy: { createdAt: 'desc' },
           skip: args.skip,
           take: args.take,
@@ -52,13 +67,17 @@ export class MenusService {
     restaurantId: string,
     pagination: PaginationArgs,
   ): Promise<PaginatedResult<MenuItem>> {
-    const where: Prisma.MenuItemWhereInput = { restaurantId };
+    const where: Prisma.MenuItemWhereInput = {
+      restaurantId,
+      kind: MenuItemKind.RESTAURANT_DISH,
+    };
 
     return paginate(
       (args) =>
         this.prisma.menuItem.findMany({
           where,
-          orderBy: { createdAt: 'desc' },
+          include: menuItemInclude,
+          orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }, { name: 'asc' }],
           skip: args.skip,
           take: args.take,
         }),
@@ -76,6 +95,15 @@ export class MenusService {
       where.restaurantId = input.restaurantId;
     }
 
+    if (input.simpleProductsOnly) {
+      where.kind = MenuItemKind.SIMPLE_PRODUCT;
+      where.restaurantId = null;
+    } else if (input.restaurantDishesOnly) {
+      where.kind = MenuItemKind.RESTAURANT_DISH;
+    } else if (input.kind) {
+      where.kind = input.kind;
+    }
+
     if (input.category) {
       where.category = input.category;
     }
@@ -86,25 +114,146 @@ export class MenusService {
 
     if (input.query) {
       const q = { contains: input.query, mode: 'insensitive' as const };
-      where.OR = [{ name: q }, { description: q }];
+      where.OR = [{ name: q }, { description: q }, { seller: q }];
+    }
+
+    if (input.marketCategoryId) {
+      where.marketCategoryId = input.marketCategoryId;
+    }
+
+    if (input.featuredOnly) {
+      where.isFeatured = true;
     }
 
     return where;
   }
 
   findOne(id: string): Promise<MenuItem> {
-    return this.prisma.menuItem.findUniqueOrThrow({ where: { id } });
+    return this.prisma.menuItem.findUniqueOrThrow({
+      where: { id },
+      include: menuItemInclude,
+    });
   }
 
   update(id: string, data: Partial<UpdateMenuItemInput>): Promise<MenuItem> {
-    return this.prisma.menuItem.update({ where: { id }, data }).catch(() => {
-      throw new NotFoundException(`MenuItem ${id} not found`);
-    });
+    const { id: _id, ...rest } = data;
+    const payload = this.normalizeUpdateInput(rest);
+    return this.prisma.menuItem
+      .update({ where: { id }, data: payload, include: menuItemInclude })
+      .catch(() => {
+        throw new NotFoundException(`MenuItem ${id} not found`);
+      });
   }
 
   remove(id: string): Promise<MenuItem> {
     return this.prisma.menuItem.delete({ where: { id } }).catch(() => {
       throw new NotFoundException(`MenuItem ${id} not found`);
     });
+  }
+
+  upsertSupplement(input: UpsertMenuItemSupplementInput) {
+    const data = {
+      menuItemId: input.menuItemId,
+      name: input.name.trim(),
+      price: input.price,
+      isAvailable: input.isAvailable ?? true,
+      sortOrder: input.sortOrder ?? 0,
+    };
+
+    if (input.id) {
+      return this.prisma.menuItemSupplement.update({
+        where: { id: input.id },
+        data,
+      });
+    }
+
+    return this.prisma.menuItemSupplement.create({ data });
+  }
+
+  deleteSupplement(id: string) {
+    return this.prisma.menuItemSupplement.delete({ where: { id } }).catch(() => {
+      throw new NotFoundException(`Supplement ${id} not found`);
+    });
+  }
+
+  async catalogStats() {
+    const [restaurants, menuDishes, simpleProducts, supplements] = await Promise.all([
+      this.prisma.restaurant.count({ where: { type: RestaurantType.RESTAURANT } }),
+      this.prisma.menuItem.count({ where: { kind: MenuItemKind.RESTAURANT_DISH } }),
+      this.prisma.menuItem.count({ where: { kind: MenuItemKind.SIMPLE_PRODUCT } }),
+      this.prisma.menuItemSupplement.count(),
+    ]);
+    return { restaurants, menuDishes, simpleProducts, supplements };
+  }
+
+  private normalizeCreateInput(data: CreateMenuItemInput): Prisma.MenuItemCreateInput {
+    const kind = data.kind ?? MenuItemKind.RESTAURANT_DISH;
+
+    if (kind === MenuItemKind.SIMPLE_PRODUCT) {
+      if (!data.seller?.trim()) {
+        throw new BadRequestException('Le vendeur est obligatoire pour un produit simple.');
+      }
+      if (!data.marketCategoryId) {
+        throw new BadRequestException('La catégorie produit est obligatoire.');
+      }
+      return {
+        kind,
+        name: data.name.trim(),
+        description: data.description?.trim(),
+        price: data.price,
+        category: data.category,
+        imageUrl: data.imageUrl,
+        isAvailable: data.isAvailable ?? true,
+        seller: data.seller.trim(),
+        badge: data.badge?.trim(),
+        isFeatured: data.isFeatured ?? false,
+        sortOrder: data.sortOrder ?? 0,
+        marketCategory: { connect: { id: data.marketCategoryId } },
+      };
+    }
+
+    if (!data.restaurantId) {
+      throw new BadRequestException('Le restaurant est obligatoire pour un plat.');
+    }
+
+    return {
+      kind: MenuItemKind.RESTAURANT_DISH,
+      name: data.name.trim(),
+      description: data.description?.trim(),
+      price: data.price,
+      category: data.category,
+      imageUrl: data.imageUrl,
+      isAvailable: data.isAvailable ?? true,
+      isFeatured: data.isFeatured ?? false,
+      sortOrder: data.sortOrder ?? 0,
+      restaurant: { connect: { id: data.restaurantId } },
+    };
+  }
+
+  private normalizeUpdateInput(
+    data: Partial<Omit<UpdateMenuItemInput, 'id'>>,
+  ): Prisma.MenuItemUpdateInput {
+    const payload: Prisma.MenuItemUpdateInput = {};
+
+    if (data.name !== undefined) payload.name = data.name.trim();
+    if (data.description !== undefined) payload.description = data.description?.trim();
+    if (data.price !== undefined) payload.price = data.price;
+    if (data.category !== undefined) payload.category = data.category;
+    if (data.imageUrl !== undefined) payload.imageUrl = data.imageUrl || null;
+    if (data.isAvailable !== undefined) payload.isAvailable = data.isAvailable;
+    if (data.isFeatured !== undefined) payload.isFeatured = data.isFeatured;
+    if (data.sortOrder !== undefined) payload.sortOrder = data.sortOrder;
+    if (data.seller !== undefined) payload.seller = data.seller?.trim() || null;
+    if (data.badge !== undefined) payload.badge = data.badge?.trim() || null;
+    if (data.marketCategoryId !== undefined) {
+      payload.marketCategory = data.marketCategoryId
+        ? { connect: { id: data.marketCategoryId } }
+        : { disconnect: true };
+    }
+    if (data.restaurantId !== undefined && data.restaurantId) {
+      payload.restaurant = { connect: { id: data.restaurantId } };
+    }
+
+    return payload;
   }
 }

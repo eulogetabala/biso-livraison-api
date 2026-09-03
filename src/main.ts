@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
 import { join } from 'path';
@@ -7,13 +8,28 @@ import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { AppModule } from './app.module';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { buildSwaggerDocument } from './common/swagger/swagger.config';
+import { AppConfig } from './config/configuration';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.enableShutdownHooks();
 
-  // Servir les fichiers uploadés (images restaurants, menus, avatars).
-  // Un fichier dans public/uploads/x.jpg est accessible via /uploads/x.jpg
+  const configService = app.get(ConfigService<AppConfig>);
+  const uploads = configService.getOrThrow<AppConfig['uploads']>('uploads');
+
+  const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  app.enableCors({
+    origin: corsOrigins,
+    credentials: true,
+  });
+
+  // Assets statiques + uploads (Render : disque persistant via UPLOAD_DIR)
   app.useStaticAssets(join(process.cwd(), 'public'));
+  app.useStaticAssets(uploads.directory, { prefix: '/uploads' });
 
   app.useGlobalPipes(
     new ValidationPipe({

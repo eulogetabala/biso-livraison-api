@@ -20,6 +20,12 @@ export class StatisticsOverviewModel {
 
   @Field(() => Int)
   pendingOrders: number;
+
+  @Field(() => Int)
+  totalDriverProfiles: number;
+
+  @Field(() => Int)
+  availableDriverProfiles: number;
 }
 
 @ObjectType()

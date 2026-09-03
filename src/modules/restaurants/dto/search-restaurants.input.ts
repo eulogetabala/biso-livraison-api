@@ -1,6 +1,8 @@
-import { Field, Float, InputType } from '@nestjs/graphql';
+import { Field, Float, InputType, Int } from '@nestjs/graphql';
+import { RestaurantType } from '@prisma/client';
 import {
   IsBoolean,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -36,4 +38,19 @@ export class SearchRestaurantsInput {
   @IsOptional()
   @IsBoolean()
   onlyActive?: boolean;
+
+  @Field(() => RestaurantType, { nullable: true })
+  @IsOptional()
+  @IsEnum(RestaurantType)
+  type?: RestaurantType;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  featuredOnly?: boolean;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  excludeMarket?: boolean;
 }

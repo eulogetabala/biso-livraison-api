@@ -1,8 +1,11 @@
 import { ForbiddenException, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
+import { THROTTLE_GPS } from '../../common/constants/throttle.constants';
 import { GeoService } from './geo.service';
 import { DriverLocationModel } from './models/driver-location.model';
+import { ActiveDeliveryTrackingModel } from './models/active-delivery-tracking.model';
 import { UpdateDriverLocationInput } from './dto/update-driver-location.input';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -15,6 +18,7 @@ export class GeoResolver {
 
   @Mutation(() => DriverLocationModel)
   @UseGuards(JwtAuthGuard)
+  @Throttle(THROTTLE_GPS)
   updateDriverLocation(
     @Args('input') input: UpdateDriverLocationInput,
     @CurrentUser() user: CurrentUser,
@@ -54,5 +58,12 @@ export class GeoResolver {
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
   driverLocations() {
     return this.geoService.getAllLocations();
+  }
+
+  @Query(() => [ActiveDeliveryTrackingModel])
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  activeDeliveriesTracking() {
+    return this.geoService.getActiveDeliveriesTracking();
   }
 }

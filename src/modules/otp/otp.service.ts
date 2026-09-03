@@ -1,12 +1,27 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
+import { congoPhoneLookupVariants, normalizePhoneE164, validateCongoMobilePhone } from '../../common/utils/phone.util';
+import { AppConfig } from '../../config/configuration';
+import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../../redis/redis.service';
 import { SmsService } from '../sms/sms.service';
 import { RequestOtpInput } from './dto/request-otp.input';
+import { ResetPasswordInput } from './dto/reset-password.input';
 import { VerifyOtpInput } from './dto/verify-otp.input';
 import { OtpRequestResult } from './models/otp-request-result.model';
 
 const CODE_LENGTH = 6;
-const CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const CODE_TTL_MS = 10 * 60 * 1000;
+const CODE_TTL_SEC = Math.floor(CODE_TTL_MS / 1000);
 const MAX_ATTEMPTS = 5;
+const REDIS_OTP_PREFIX = 'otp:pending:';
 
 type PendingOtp = {
   code: string;
@@ -15,31 +30,141 @@ type PendingOtp = {
 };
 
 /**
- * Flux OTP basé sur Twilio Verify.
- *
- * Quand Verify est configuré, Twilio génère et envoie le code lui-même (SMS)
- * et c'est Twilio qui le vérifie. En l'absence de config (développement),
- * un fallback local génère un code, le retourne dans `devCode` et le vérifie
- * en mémoire.
+ * OTP via Twilio Verify en production.
+ * Fallback local (dev) : Redis si disponible, sinon mémoire process (single instance).
  */
 @Injectable()
-export class OtpService {
+export class OtpService implements OnModuleInit {
   private readonly logger = new Logger(OtpService.name);
-  private readonly pending = new Map<string, PendingOtp>();
+  private readonly memoryPending = new Map<string, PendingOtp>();
+  private readonly isProduction: boolean;
 
-  constructor(private readonly smsService: SmsService) {}
-
-  /** Normalise le numéro en clé interne (E.164). */
-  private key(phone: string): string {
-    const digits = phone.replace(/\D/g, '');
-    return digits.startsWith('242') ? `+${digits}` : `+242${digits}`;
+  constructor(
+    private readonly smsService: SmsService,
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+    configService: ConfigService<AppConfig>,
+  ) {
+    this.isProduction = configService.getOrThrow<AppConfig['app']>('app').isProduction;
   }
 
-  /**
-   * Déclenche l'envoi d'un code OTP.
-   * - Verify configuré : envoi via Twilio, pas de code connu côté backend.
-   * - Verify non configuré : code généré localement et renvoyé (devCode).
-   */
+  onModuleInit() {
+    if (this.isProduction && !this.smsService.isVerifyConfigured) {
+      throw new Error(
+        'Production : configurez Twilio Verify (TWILIO_VERIFY_SERVICE_SID). ' +
+          'En free tier Render, pas de Redis — OTP 100 % via Twilio.',
+      );
+    }
+  }
+
+  private key(phone: string): string {
+    const result = validateCongoMobilePhone(phone);
+    if (!result.ok) {
+      const messages: Record<typeof result.reason, string> = {
+        empty: 'Numéro de téléphone requis.',
+        length: 'Numéro incomplet. Saisissez 9 chiffres (ex. 06 XXX XX XX).',
+        prefix: 'Numéro mobile invalide. Il doit commencer par 06.',
+        format: 'Numéro de téléphone invalide.',
+      };
+      throw new BadRequestException(messages[result.reason]);
+    }
+    return result.e164;
+  }
+
+  private redisKey(phone: string): string {
+    return `${REDIS_OTP_PREFIX}${phone}`;
+  }
+
+  private async storePendingCode(phone: string, code: string) {
+    const payload: PendingOtp = {
+      code,
+      expiresAt: Date.now() + CODE_TTL_MS,
+      attempts: 0,
+    };
+
+    if (this.redis.isReady) {
+      await this.redis.set(this.redisKey(phone), JSON.stringify(payload), CODE_TTL_SEC);
+      return;
+    }
+
+    if (this.isProduction) {
+      throw new BadRequestException('Service OTP temporairement indisponible.');
+    }
+
+    this.memoryPending.set(phone, payload);
+  }
+
+  private async findPending(phone: string): Promise<{ key: string; pending: PendingOtp } | null> {
+    for (const variant of congoPhoneLookupVariants(phone)) {
+      const key = normalizePhoneE164(variant);
+      if (!key) continue;
+
+      if (this.redis.isReady) {
+        const raw = await this.redis.get(this.redisKey(key));
+        if (raw) {
+          try {
+            return { key, pending: JSON.parse(raw) as PendingOtp };
+          } catch {
+            await this.redis.del(this.redisKey(key));
+          }
+        }
+        continue;
+      }
+
+      const pending = this.memoryPending.get(key);
+      if (pending) return { key, pending };
+    }
+    return null;
+  }
+
+  private async deletePending(key: string) {
+    if (this.redis.isReady) {
+      await this.redis.del(this.redisKey(key));
+      return;
+    }
+    this.memoryPending.delete(key);
+  }
+
+  private async persistPending(key: string, pending: PendingOtp) {
+    const ttlSec = Math.max(1, Math.ceil((pending.expiresAt - Date.now()) / 1000));
+    if (this.redis.isReady) {
+      await this.redis.set(this.redisKey(key), JSON.stringify(pending), ttlSec);
+      return;
+    }
+    this.memoryPending.set(key, pending);
+  }
+
+  private async verifyLocalPendingOrThrow(phone: string, code: string): Promise<boolean> {
+    const found = await this.findPending(phone);
+    if (!found) {
+      throw new BadRequestException(
+        'Aucun code demandé pour ce numéro. Veuillez en demander un nouveau.',
+      );
+    }
+    const { key, pending } = found;
+
+    if (pending.attempts >= MAX_ATTEMPTS) {
+      await this.deletePending(key);
+      throw new BadRequestException(
+        'Trop de tentatives. Veuillez demander un nouveau code.',
+      );
+    }
+    if (pending.expiresAt < Date.now()) {
+      await this.deletePending(key);
+      throw new BadRequestException(
+        'Ce code a expiré. Veuillez en demander un nouveau.',
+      );
+    }
+    if (pending.code !== code) {
+      pending.attempts += 1;
+      await this.persistPending(key, pending);
+      throw new BadRequestException('Code invalide. Veuillez réessayer.');
+    }
+
+    await this.deletePending(key);
+    return true;
+  }
+
   async requestOtp(input: RequestOtpInput): Promise<OtpRequestResult> {
     const phone = this.key(input.phone);
 
@@ -48,39 +173,30 @@ export class OtpService {
       this.logger.log(`Code OTP envoyé via Twilio Verify pour ${phone}`);
       return {
         phone,
-        expiresIn: Math.floor(CODE_TTL_MS / 1000),
+        expiresIn: CODE_TTL_SEC,
         devCode: null,
       };
     }
 
-    // Fallback développement : code local retourné pour l'UI.
     const code = this.generateCode();
-    this.pending.set(phone, {
-      code,
-      expiresAt: Date.now() + CODE_TTL_MS,
-      attempts: 0,
-    });
+    await this.storePendingCode(phone, code);
     this.logger.log(`[OTP dev] Code généré pour ${phone} : ${code}`);
     return {
       phone,
-      expiresIn: Math.floor(CODE_TTL_MS / 1000),
-      devCode: code,
+      expiresIn: CODE_TTL_SEC,
+      devCode: this.isProduction ? null : code,
     };
   }
 
-  /**
-   * Vérifie le code saisi.
-   * - Verify configuré : délégation à Twilio (le code est à usage unique).
-   * - Sinon : vérification locale du fallback.
-   */
   async verifyOtp(input: VerifyOtpInput): Promise<boolean> {
     const phone = this.key(input.phone);
     const code = input.code.trim();
 
+    if (this.smsService.testOtpAllowed && code === '123456') {
+      return true;
+    }
+
     if (this.smsService.isVerifyConfigured) {
-      if (this.smsService.testOtpAllowed && code === '123456') {
-        return true;
-      }
       const approved = await this.smsService.checkVerification(phone, code);
       if (!approved) {
         throw new BadRequestException('Code invalide. Veuillez réessayer.');
@@ -88,31 +204,25 @@ export class OtpService {
       return true;
     }
 
-    // Vérification locale (fallback dev).
-    const pending = this.pending.get(phone);
-    if (!pending) {
-      throw new BadRequestException(
-        'Aucun code demandé pour ce numéro. Veuillez en demander un nouveau.',
-      );
-    }
-    if (pending.attempts >= MAX_ATTEMPTS) {
-      this.pending.delete(phone);
-      throw new BadRequestException(
-        'Trop de tentatives. Veuillez demander un nouveau code.',
-      );
-    }
-    if (pending.expiresAt < Date.now()) {
-      this.pending.delete(phone);
-      throw new BadRequestException(
-        'Ce code a expiré. Veuillez en demander un nouveau.',
-      );
-    }
-    if (pending.code !== code) {
-      pending.attempts += 1;
-      throw new BadRequestException('Code invalide. Veuillez réessayer.');
-    }
+    return this.verifyLocalPendingOrThrow(phone, code);
+  }
 
-    this.pending.delete(phone);
+  async resetPassword(input: ResetPasswordInput): Promise<boolean> {
+    await this.verifyOtp({ phone: input.phone, code: input.code });
+    const variants = congoPhoneLookupVariants(input.phone);
+    const user = await this.prisma.user.findFirst({
+      where: { phone: { in: variants } },
+    });
+    if (!user) {
+      throw new NotFoundException('Aucun compte associé à ce numéro.');
+    }
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: await bcrypt.hash(input.password, 10),
+        phoneVerified: true,
+      },
+    });
     return true;
   }
 

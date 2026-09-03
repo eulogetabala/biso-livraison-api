@@ -57,7 +57,7 @@
     },
     "/health": {
       "get": {
-        "description": "Endpoint de supervision (load balancer, CI, monitoring). Retourne le statut du service et la version déployée.",
+        "description": "Endpoint de supervision (load balancer, CI, monitoring). Retourne le statut du service, la version déployée et l’état Postgres.",
         "operationId": "HealthController_check",
         "parameters": [],
         "responses": {
@@ -147,7 +147,8 @@
             "type": "string",
             "example": "ok",
             "enum": [
-              "ok"
+              "ok",
+              "degraded"
             ]
           },
           "service": {
@@ -161,13 +162,22 @@
           "timestamp": {
             "type": "string",
             "example": "2026-08-26T15:00:00.000Z"
+          },
+          "database": {
+            "type": "string",
+            "example": "ok",
+            "enum": [
+              "ok",
+              "down"
+            ]
           }
         },
         "required": [
           "status",
           "service",
           "version",
-          "timestamp"
+          "timestamp",
+          "database"
         ]
       }
     }

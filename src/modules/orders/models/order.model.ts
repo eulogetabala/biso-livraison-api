@@ -58,6 +58,12 @@ export class OrderModel {
   @Field()
   deliveryZipCode: string;
 
+  @Field({ nullable: true })
+  deliveryLatitude?: number;
+
+  @Field({ nullable: true })
+  deliveryLongitude?: number;
+
   @Field()
   deliveryFee: number;
 

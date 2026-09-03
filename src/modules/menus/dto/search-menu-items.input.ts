@@ -1,5 +1,5 @@
 import { Field, ID, InputType } from '@nestjs/graphql';
-import { MenuItemCategory } from '@prisma/client';
+import { MenuItemCategory, MenuItemKind } from '@prisma/client';
 import {
   IsBoolean,
   IsEnum,
@@ -15,6 +15,21 @@ export class SearchMenuItemsInput {
   @IsUUID()
   restaurantId?: string;
 
+  @Field(() => MenuItemKind, { nullable: true })
+  @IsOptional()
+  @IsEnum(MenuItemKind)
+  kind?: MenuItemKind;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  simpleProductsOnly?: boolean;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  restaurantDishesOnly?: boolean;
+
   @Field(() => MenuItemCategory, { nullable: true })
   @IsOptional()
   @IsEnum(MenuItemCategory)
@@ -29,4 +44,14 @@ export class SearchMenuItemsInput {
   @IsOptional()
   @IsBoolean()
   onlyAvailable?: boolean;
+
+  @Field(() => ID, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  marketCategoryId?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  featuredOnly?: boolean;
 }

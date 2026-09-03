@@ -3,20 +3,33 @@ import { Notification, NotificationType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationArgs } from '../../common/dto/pagination.args';
 import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
+import { PushService } from './push.service';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pushService: PushService,
+  ) {}
 
   async notify(
     userId: string,
     type: NotificationType,
     title: string,
     message: string,
+    data?: Record<string, string>,
   ): Promise<Notification> {
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: { userId, type, title, message },
     });
+
+    void this.pushService.sendToUser(userId, {
+      title,
+      body: message,
+      data: { type, ...data },
+    });
+
+    return notification;
   }
 
   myNotifications(

@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class HealthResponseDto {
-  @ApiProperty({ example: 'ok', enum: ['ok'] })
-  status: 'ok';
+  @ApiProperty({ example: 'ok', enum: ['ok', 'degraded'] })
+  status: 'ok' | 'degraded';
 
   @ApiProperty({ example: 'biso-livraison-api' })
   service: string;
@@ -12,4 +12,7 @@ export class HealthResponseDto {
 
   @ApiProperty({ example: '2026-08-26T15:00:00.000Z' })
   timestamp: string;
+
+  @ApiProperty({ example: 'ok', enum: ['ok', 'down'] })
+  database: 'ok' | 'down';
 }

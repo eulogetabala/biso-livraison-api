@@ -5,6 +5,8 @@ import { DriversService } from './drivers.service';
 import { DriverModel } from './models/driver.model';
 import { UpdateDriverProfileInput } from './dto/update-driver-profile.input';
 import { SetDriverAvailabilityInput } from './dto/set-driver-availability.input';
+import { AdminCreateDriverInput } from './dto/admin-create-driver.input';
+import { AdminSetDriverAvailabilityInput } from './dto/admin-set-driver-availability.input';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -23,7 +25,7 @@ export class DriversResolver {
 
   @Query(() => [DriverModel])
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER, UserRole.CLIENT)
   availableDrivers() {
     return this.driversService.findAvailable();
   }
@@ -37,7 +39,7 @@ export class DriversResolver {
 
   @Query(() => DriverModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.CLIENT)
   driver(@Args('id', { type: () => ID }) id: string) {
     return this.driversService.findOne(id);
   }
@@ -74,6 +76,25 @@ export class DriversResolver {
       userId,
       vehicleType,
       vehiclePlate,
+    );
+  }
+
+  @Mutation(() => DriverModel)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  adminCreateDriver(@Args('input') input: AdminCreateDriverInput) {
+    return this.driversService.adminCreateDriver(input);
+  }
+
+  @Mutation(() => DriverModel)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  adminSetDriverAvailability(
+    @Args('input') input: AdminSetDriverAvailabilityInput,
+  ) {
+    return this.driversService.adminSetAvailability(
+      input.driverId,
+      input.isAvailable,
     );
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, Restaurant } from '@prisma/client';
+import { Prisma, Restaurant, RestaurantType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateRestaurantInput } from './dto/create-restaurant.input';
 import { UpdateRestaurantInput } from './dto/update-restaurant.input';
@@ -30,7 +30,19 @@ export class RestaurantsService {
     }
 
     if (input.cuisineType) {
-      where.cuisineType = { equals: input.cuisineType, mode: 'insensitive' };
+      where.cuisineType = { contains: input.cuisineType, mode: 'insensitive' };
+    }
+
+    if (input.type) {
+      where.type = input.type;
+    }
+
+    if (input.featuredOnly) {
+      where.isFeatured = true;
+    }
+
+    if (input.excludeMarket) {
+      where.type = { not: RestaurantType.MARKET };
     }
 
     if (input.minRating !== undefined) {
@@ -51,7 +63,12 @@ export class RestaurantsService {
       (args) =>
         this.prisma.restaurant.findMany({
           where,
-          orderBy: [{ rating: 'desc' }, { name: 'asc' }],
+          orderBy: [
+            { isFeatured: 'desc' },
+            { sortOrder: 'asc' },
+            { rating: 'desc' },
+            { name: 'asc' },
+          ],
           skip: args.skip,
           take: args.take,
         }),

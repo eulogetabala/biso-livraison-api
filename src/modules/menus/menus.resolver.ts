@@ -3,10 +3,13 @@ import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { MenusService } from './menus.service';
 import { MenuItemModel } from './models/menu-item.model';
+import { MenuItemSupplementModel } from './models/menu-item-supplement.model';
 import { PaginatedMenuItemModel } from './models/paginated-menu-item.model';
+import { CatalogStatsModel } from './models/catalog-stats.model';
 import { CreateMenuItemInput } from './dto/create-menu-item.input';
 import { UpdateMenuItemInput } from './dto/update-menu-item.input';
 import { SearchMenuItemsInput } from './dto/search-menu-items.input';
+import { UpsertMenuItemSupplementInput } from './dto/upsert-menu-item-supplement.input';
 import { PaginationArgs } from '../../common/dto/pagination.args';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -42,6 +45,13 @@ export class MenusResolver {
     return this.menusService.findOne(id);
   }
 
+  @Query(() => CatalogStatsModel)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  catalogStats() {
+    return this.menusService.catalogStats();
+  }
+
   @Mutation(() => MenuItemModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
@@ -62,5 +72,19 @@ export class MenusResolver {
   @Roles(UserRole.ADMIN)
   deleteMenuItem(@Args('id', { type: () => ID }) id: string) {
     return this.menusService.remove(id);
+  }
+
+  @Mutation(() => MenuItemSupplementModel)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  upsertMenuItemSupplement(@Args('input') input: UpsertMenuItemSupplementInput) {
+    return this.menusService.upsertSupplement(input);
+  }
+
+  @Mutation(() => MenuItemSupplementModel)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  deleteMenuItemSupplement(@Args('id', { type: () => ID }) id: string) {
+    return this.menusService.deleteSupplement(id);
   }
 }

@@ -6,11 +6,13 @@ import {
 } from '@nestjs/common';
 import {
   DeliveryStatus,
+  MenuItemKind,
   Order,
   OrderStatus,
   NotificationType,
   PaymentMethod,
   PaymentStatus,
+  Prisma,
   UserRole,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -20,6 +22,9 @@ import {
 } from './dto/create-order.input';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { SearchOrdersInput } from './dto/search-orders.input';
+import { ORDER_STATUS_LABELS_FR } from './order-status.labels';
 import { PaginationArgs } from '../../common/dto/pagination.args';
 import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
 
@@ -36,6 +41,7 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(input: CreateOrderInput, userId: string): Promise<Order> {
@@ -68,6 +74,8 @@ export class OrdersService {
           deliveryAddress: input.deliveryAddress,
           deliveryCity: input.deliveryCity,
           deliveryZipCode: input.deliveryZipCode,
+          deliveryLatitude: input.deliveryLatitude,
+          deliveryLongitude: input.deliveryLongitude,
           deliveryFee,
           grandTotal,
           items: {
@@ -107,18 +115,54 @@ export class OrdersService {
     return order;
   }
 
-  findAll(pagination: PaginationArgs): Promise<PaginatedResult<Order>> {
+  findAll(
+    pagination: PaginationArgs,
+    input?: SearchOrdersInput,
+  ): Promise<PaginatedResult<Order>> {
+    const where = this.buildSearchWhere(input);
+
     return paginate(
       (args) =>
         this.prisma.order.findMany({
+          where,
           include: orderInclude,
           orderBy: { createdAt: 'desc' },
           skip: args.skip,
           take: args.take,
         }),
-      () => this.prisma.order.count(),
+      () => this.prisma.order.count({ where }),
       pagination,
     );
+  }
+
+  private buildSearchWhere(input?: SearchOrdersInput): Prisma.OrderWhereInput {
+    if (!input) {
+      return {};
+    }
+
+    const where: Prisma.OrderWhereInput = {};
+
+    if (input.status) {
+      where.status = input.status;
+    }
+
+    if (input.restaurantType) {
+      where.restaurant = { type: input.restaurantType };
+    }
+
+    if (input.from || input.to) {
+      where.createdAt = {};
+      if (input.from) {
+        where.createdAt.gte = new Date(input.from);
+      }
+      if (input.to) {
+        const to = new Date(input.to);
+        to.setUTCHours(23, 59, 59, 999);
+        where.createdAt.lte = to;
+      }
+    }
+
+    return where;
   }
 
   findByUser(
@@ -193,17 +237,28 @@ export class OrdersService {
         });
       }
 
-      await tx.notification.create({
-        data: {
-          userId: existing.userId,
-          type: NotificationType.ORDER_STATUS,
-          title: 'Statut de votre commande',
-          message: `Votre commande est passée au statut ${status}`,
-        },
-      });
-
       return updated;
     });
+
+    const statusLabel = ORDER_STATUS_LABELS_FR[status] ?? status;
+
+    if (status !== OrderStatus.CANCELLED) {
+      void this.notificationsService.notify(
+        existing.userId,
+        NotificationType.ORDER_STATUS,
+        'Statut de votre commande',
+        `Votre commande est maintenant : ${statusLabel}`,
+        { orderId: id, status },
+      );
+    } else {
+      void this.notificationsService.notify(
+        existing.userId,
+        NotificationType.ORDER_STATUS,
+        'Commande annulée',
+        'Votre commande a été annulée.',
+        { orderId: id, status },
+      );
+    }
 
     if (status === OrderStatus.CANCELLED) {
       void this.mailService.sendNotification(
@@ -322,12 +377,27 @@ export class OrdersService {
       throw new BadRequestException('One or more menu items do not exist');
     }
 
-    const itemsOutsideRestaurant = menuItems.some(
-      (item) => item.restaurantId !== restaurantId,
-    );
+    const itemsOutsideRestaurant = menuItems.some((item) => {
+      if (item.kind === MenuItemKind.SIMPLE_PRODUCT) {
+        return item.restaurantId !== null;
+      }
+      return item.restaurantId !== restaurantId;
+    });
     if (itemsOutsideRestaurant) {
       throw new BadRequestException(
         'One or more items do not belong to this restaurant',
+      );
+    }
+
+    const hasSimpleProducts = menuItems.some(
+      (item) => item.kind === MenuItemKind.SIMPLE_PRODUCT,
+    );
+    const hasRestaurantDishes = menuItems.some(
+      (item) => item.kind === MenuItemKind.RESTAURANT_DISH,
+    );
+    if (hasSimpleProducts && hasRestaurantDishes) {
+      throw new BadRequestException(
+        'Cannot mix restaurant dishes and simple products in one order',
       );
     }
 

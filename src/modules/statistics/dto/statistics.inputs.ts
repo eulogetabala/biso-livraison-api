@@ -22,4 +22,14 @@ export class TopRestaurantsInput {
   @Min(1)
   @Max(50)
   limit?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsDateString()
+  from?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsDateString()
+  to?: string;
 }
