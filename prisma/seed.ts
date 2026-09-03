@@ -136,6 +136,30 @@ async function main() {
     },
   });
 
+  const partnerPassword = await bcrypt.hash('Partner123!', 10);
+  await prisma.user.upsert({
+    where: { id: SEED_IDS.partnerNganda },
+    create: {
+      id: SEED_IDS.partnerNganda,
+      firstName: 'Partner',
+      lastName: 'Nganda',
+      phone: '+242067000111',
+      password: partnerPassword,
+      role: UserRole.PARTNER,
+      phoneVerified: true,
+      partnerRestaurantId: SEED_IDS.restaurants.nganda,
+    },
+    update: {
+      firstName: 'Partner',
+      lastName: 'Nganda',
+      phone: '+242067000111',
+      password: partnerPassword,
+      role: UserRole.PARTNER,
+      phoneVerified: true,
+      partnerRestaurantId: SEED_IDS.restaurants.nganda,
+    },
+  });
+
   const passwordHash = await bcrypt.hash('Driver123!', 10);
 
   for (const driver of DRIVER_USERS) {

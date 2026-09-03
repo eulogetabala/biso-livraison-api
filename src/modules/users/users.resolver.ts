@@ -15,6 +15,8 @@ import { CreateUserInput } from './dto/create-user.input';
 import { UpdateProfileInput } from './dto/update-profile.input';
 import { SearchUsersInput } from './dto/search-users.input';
 import { AdminSetUserBlockedInput } from './dto/admin-set-user-blocked.input';
+import { AdminCreatePartnerInput } from './dto/admin-create-partner.input';
+import { AdminUpdatePartnerInput } from './dto/admin-update-partner.input';
 import { PaginationArgs } from '../../common/dto/pagination.args';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -28,14 +30,14 @@ export class UsersResolver {
 
   @Query(() => [UserModel])
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   users() {
     return this.usersService.findAll();
   }
 
   @Query(() => PaginatedUserModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   usersPaginated(
     @Args() pagination: PaginationArgs,
     @Args('input', { nullable: true }) input?: SearchUsersInput,
@@ -45,7 +47,7 @@ export class UsersResolver {
 
   @Query(() => UserStatisticsOverviewModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   userStatisticsOverview(
     @Args('range', { nullable: true }) range?: UserStatisticsRangeInput,
   ) {
@@ -54,7 +56,7 @@ export class UsersResolver {
 
   @Query(() => [DailyUserRegistrationsModel])
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   dailyUserRegistrations(
     @Args('range', { nullable: true }) range?: UserStatisticsRangeInput,
   ) {
@@ -102,5 +104,26 @@ export class UsersResolver {
   @Throttle(THROTTLE_REGISTER)
   createUser(@Args('input') input: CreateUserInput) {
     return this.usersService.create(input);
+  }
+
+  @Query(() => [UserModel])
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  partners() {
+    return this.usersService.findPartners();
+  }
+
+  @Mutation(() => UserModel)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  adminCreatePartner(@Args('input') input: AdminCreatePartnerInput) {
+    return this.usersService.adminCreatePartner(input);
+  }
+
+  @Mutation(() => UserModel)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  adminUpdatePartner(@Args('input') input: AdminUpdatePartnerInput) {
+    return this.usersService.adminUpdatePartner(input);
   }
 }

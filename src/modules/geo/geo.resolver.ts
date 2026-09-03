@@ -48,21 +48,21 @@ export class GeoResolver {
 
   @Query(() => DriverLocationModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   driverLocation(@Args('driverId', { type: () => ID }) driverId: string) {
     return this.geoService.getLocation(driverId);
   }
 
   @Query(() => [DriverLocationModel])
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   driverLocations() {
     return this.geoService.getAllLocations();
   }
 
   @Query(() => [ActiveDeliveryTrackingModel])
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   activeDeliveriesTracking() {
     return this.geoService.getActiveDeliveriesTracking();
   }

@@ -1,13 +1,17 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { Prisma, User, UserRole } from '@prisma/client';
+import { ForbiddenException, Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Prisma, User, UserRole, RestaurantType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationArgs } from '../../common/dto/pagination.args';
 import { paginate, PaginatedResult } from '../../common/utils/pagination.util';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateProfileInput } from './dto/update-profile.input';
 import { SearchUsersInput } from './dto/search-users.input';
+import { AdminCreatePartnerInput } from './dto/admin-create-partner.input';
+import { AdminUpdatePartnerInput } from './dto/admin-update-partner.input';
 import { UserStatisticsRangeInput } from './models/user-statistics.models';
 import * as bcrypt from 'bcrypt';
+
+const partnerInclude = { partnerRestaurant: true } as const;
 
 const CLIENT_WHERE: Prisma.UserWhereInput = { role: UserRole.CLIENT };
 
@@ -20,8 +24,12 @@ export class UsersService {
 
     return this.prisma.user.create({
       data: {
-        ...data,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
         password: hashedPassword,
+        phoneVerified: false,
       },
     });
   }
@@ -88,6 +96,100 @@ export class UsersService {
       where: { id: userId },
       data: { isBlocked },
     });
+  }
+
+  findPartners() {
+    return this.prisma.user.findMany({
+      where: { role: UserRole.PARTNER },
+      include: partnerInclude,
+      orderBy: [{ partnerRestaurant: { name: 'asc' } }, { lastName: 'asc' }],
+    });
+  }
+
+  async adminCreatePartner(input: AdminCreatePartnerInput) {
+    await this.assertPartnerRestaurant(input.partnerRestaurantId);
+
+    const normalizedPhone = input.phone.trim().replace(/\s+/g, '');
+    const existing = await this.prisma.user.findUnique({
+      where: { phone: normalizedPhone },
+    });
+    if (existing) {
+      throw new BadRequestException('Un compte existe déjà avec ce numéro.');
+    }
+
+    const hashedPassword = await bcrypt.hash(input.password, 10);
+
+    return this.prisma.user.create({
+      data: {
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        phone: normalizedPhone,
+        password: hashedPassword,
+        role: UserRole.PARTNER,
+        phoneVerified: true,
+        partnerRestaurantId: input.partnerRestaurantId,
+      },
+      include: partnerInclude,
+    });
+  }
+
+  async adminUpdatePartner(input: AdminUpdatePartnerInput) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: input.userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User ${input.userId} not found`);
+    }
+    if (user.role !== UserRole.PARTNER) {
+      throw new BadRequestException('This user is not a partner account');
+    }
+
+    if (input.partnerRestaurantId) {
+      await this.assertPartnerRestaurant(input.partnerRestaurantId);
+    }
+
+    if (input.phone?.trim()) {
+      const normalizedPhone = input.phone.trim().replace(/\s+/g, '');
+      const existing = await this.prisma.user.findUnique({
+        where: { phone: normalizedPhone },
+      });
+      if (existing && existing.id !== user.id) {
+        throw new BadRequestException('Un compte existe déjà avec ce numéro.');
+      }
+    }
+
+    const data: Prisma.UserUpdateInput = {};
+
+    if (input.firstName?.trim()) data.firstName = input.firstName.trim();
+    if (input.lastName?.trim()) data.lastName = input.lastName.trim();
+    if (input.phone?.trim()) data.phone = input.phone.trim().replace(/\s+/g, '');
+    if (input.password) data.password = await bcrypt.hash(input.password, 10);
+    if (input.partnerRestaurantId) {
+      data.partnerRestaurant = { connect: { id: input.partnerRestaurantId } };
+    }
+    if (input.isBlocked !== undefined) data.isBlocked = input.isBlocked;
+
+    return this.prisma.user.update({
+      where: { id: user.id },
+      data,
+      include: partnerInclude,
+    });
+  }
+
+  private async assertPartnerRestaurant(restaurantId: string): Promise<void> {
+    const restaurant = await this.prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+    });
+
+    if (!restaurant) {
+      throw new NotFoundException(`Restaurant ${restaurantId} not found`);
+    }
+    if (restaurant.type === RestaurantType.MARKET) {
+      throw new BadRequestException(
+        'Un partenaire doit être lié à un restaurant, pas au marché.',
+      );
+    }
   }
 
   async statisticsOverview(range: UserStatisticsRangeInput = {}) {

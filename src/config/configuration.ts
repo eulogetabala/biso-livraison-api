@@ -51,6 +51,13 @@ export interface AppConfig {
   uploads: {
     directory: string;
     publicUrl: string;
+    cloudinary: {
+      enabled: boolean;
+      cloudName: string;
+      apiKey: string;
+      apiSecret: string;
+      folder: string;
+    };
   };
 }
 
@@ -111,6 +118,17 @@ export default (): AppConfig => {
     uploads: {
       directory: process.env.UPLOAD_DIR ?? 'public/uploads',
       publicUrl: process.env.PUBLIC_UPLOAD_URL ?? '/uploads',
+      cloudinary: {
+        enabled: Boolean(
+          process.env.CLOUDINARY_CLOUD_NAME &&
+            process.env.CLOUDINARY_API_KEY &&
+            process.env.CLOUDINARY_API_SECRET,
+        ),
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME ?? '',
+        apiKey: process.env.CLOUDINARY_API_KEY ?? '',
+        apiSecret: process.env.CLOUDINARY_API_SECRET ?? '',
+        folder: process.env.CLOUDINARY_FOLDER ?? 'biso-livraison',
+      },
     },
   };
 };

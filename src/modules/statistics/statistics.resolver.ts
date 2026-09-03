@@ -15,6 +15,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Resolver()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,33 +26,40 @@ export class StatisticsResolver {
   @Query(() => StatisticsOverviewModel)
   statisticsOverview(
     @Args('range', { nullable: true }) range?: StatisticsRangeInput,
+    @CurrentUser() user?: CurrentUser,
   ) {
-    return this.statisticsService.overview(range ?? {});
+    return this.statisticsService.overview(range ?? {}, user);
   }
 
   @Query(() => [RevenueByRestaurantModel])
   revenueByRestaurant(
     @Args('range', { nullable: true }) range?: StatisticsRangeInput,
+    @CurrentUser() user?: CurrentUser,
   ) {
-    return this.statisticsService.revenueByRestaurant(range ?? {});
+    return this.statisticsService.revenueByRestaurant(range ?? {}, user);
   }
 
   @Query(() => [OrdersByStatusModel])
   ordersByStatus(
     @Args('range', { nullable: true }) range?: StatisticsRangeInput,
+    @CurrentUser() user?: CurrentUser,
   ) {
-    return this.statisticsService.ordersByStatus(range ?? {});
+    return this.statisticsService.ordersByStatus(range ?? {}, user);
   }
 
   @Query(() => [DailyOrdersModel])
-  dailyOrders(@Args('range', { nullable: true }) range?: StatisticsRangeInput) {
-    return this.statisticsService.dailyOrders(range ?? {});
+  dailyOrders(
+    @Args('range', { nullable: true }) range?: StatisticsRangeInput,
+    @CurrentUser() user?: CurrentUser,
+  ) {
+    return this.statisticsService.dailyOrders(range ?? {}, user);
   }
 
   @Query(() => [RevenueByRestaurantModel])
   topRestaurants(
     @Args('input', { nullable: true }) input?: TopRestaurantsInput,
+    @CurrentUser() user?: CurrentUser,
   ) {
-    return this.statisticsService.topRestaurants(input ?? {});
+    return this.statisticsService.topRestaurants(input ?? {}, user);
   }
 }

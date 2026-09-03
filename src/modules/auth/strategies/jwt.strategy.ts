@@ -39,6 +39,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         role: true,
         isBlocked: true,
+        partnerRestaurantId: true,
       },
     });
 
@@ -51,6 +52,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       phone: user.phone,
       email: user.email,
       role: user.role,
+      partnerRestaurantId: user.partnerRestaurantId,
     };
   }
 }

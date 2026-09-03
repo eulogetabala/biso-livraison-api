@@ -44,6 +44,14 @@ input AdminCreateDriverInput {
   vehicleType: String = "MOTO"
 }
 
+input AdminCreatePartnerInput {
+  firstName: String!
+  lastName: String!
+  partnerRestaurantId: ID!
+  password: String!
+  phone: String!
+}
+
 input AdminSetDriverAvailabilityInput {
   driverId: ID!
   isAvailable: Boolean!
@@ -51,6 +59,27 @@ input AdminSetDriverAvailabilityInput {
 
 input AdminSetUserBlockedInput {
   isBlocked: Boolean!
+  userId: ID!
+}
+
+input AdminUpdateDriverInput {
+  driverId: ID!
+  firstName: String
+  isAvailable: Boolean
+  lastName: String
+  password: String
+  phone: String
+  vehiclePlate: String
+  vehicleType: String
+}
+
+input AdminUpdatePartnerInput {
+  firstName: String
+  isBlocked: Boolean
+  lastName: String
+  partnerRestaurantId: ID
+  password: String
+  phone: String
   userId: ID!
 }
 
@@ -155,7 +184,6 @@ input CreateUserInput {
   lastName: String!
   password: String!
   phone: String!
-  phoneVerified: Boolean! = false
 }
 
 type CuisineTypeConfigModel {
@@ -346,8 +374,11 @@ type MenuItemSupplementModel {
 type Mutation {
   addTrackingEvent(input: AddTrackingEventInput!): TrackingEventModel!
   adminCreateDriver(input: AdminCreateDriverInput!): DriverModel!
+  adminCreatePartner(input: AdminCreatePartnerInput!): UserModel!
   adminSetDriverAvailability(input: AdminSetDriverAvailabilityInput!): DriverModel!
   adminSetUserBlocked(input: AdminSetUserBlockedInput!): UserModel!
+  adminUpdateDriver(input: AdminUpdateDriverInput!): DriverModel!
+  adminUpdatePartner(input: AdminUpdatePartnerInput!): UserModel!
   assignAvailableDriver(orderId: ID!): DeliveryModel!
   assignAvailableDriverToParcel(parcelId: ID!): ParcelModel!
   assignDriver(input: AssignDriverInput!): DeliveryModel!
@@ -601,6 +632,7 @@ type Query {
   ordersByStatus(range: StatisticsRangeInput): [OrdersByStatusModel!]!
   parcel(id: ID!): ParcelModel!
   parcels(input: SearchParcelsInput, limit: Int = 20, page: Int = 1): PaginatedParcelModel!
+  partners: [UserModel!]!
   paymentByOrder(orderId: ID!): PaymentModel!
   payments: [PaymentModel!]!
   restaurant(id: ID!): RestaurantModel!
@@ -913,6 +945,8 @@ type UserModel {
   id: ID!
   isBlocked: Boolean!
   lastName: String!
+  partnerRestaurant: RestaurantModel
+  partnerRestaurantId: ID
   phone: String!
   phoneVerified: Boolean!
   role: UserRole!

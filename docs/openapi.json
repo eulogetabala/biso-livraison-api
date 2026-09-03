@@ -3,7 +3,7 @@
   "paths": {
     "/uploads/image": {
       "post": {
-        "description": "Enregistre une image (JPEG, PNG, WebP, GIF, SVG) et retourne son URL publique. Taille maximale : 5 Mo. Authentification JWT requise.",
+        "description": "Enregistre une image (JPEG, PNG, WebP, GIF) et retourne son URL publique. Taille maximale : 5 Mo. Authentification JWT requise.",
         "operationId": "UploadsController_uploadImage",
         "parameters": [],
         "requestBody": {
@@ -52,6 +52,21 @@
         "summary": "Uploader une image",
         "tags": [
           "Uploads"
+        ]
+      }
+    },
+    "/": {
+      "get": {
+        "operationId": "RootController_root",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Liens vers les endpoints principaux"
+          }
+        },
+        "summary": "Informations API (racine)",
+        "tags": [
+          "Root"
         ]
       }
     },

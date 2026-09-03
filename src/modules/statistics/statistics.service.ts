@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { partnerOrderRestaurantFilter } from '../../common/utils/partner-scope.util';
 import {
   StatisticsRangeInput,
   TopRestaurantsInput,
@@ -17,13 +19,15 @@ const REVENUE_STATUSES: OrderStatus[] = [
 export class StatisticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async overview(range: StatisticsRangeInput = {}) {
+  async overview(range: StatisticsRangeInput = {}, user?: CurrentUser) {
+    const partnerScope = this.partnerScope(user);
     const dateWhere = this.dateRangeWhere(range);
     const revenueWhere: Prisma.OrderWhereInput = {
       status: { in: REVENUE_STATUSES },
       ...dateWhere,
+      ...partnerScope,
     };
-    const ordersWhere: Prisma.OrderWhereInput = { ...dateWhere };
+    const ordersWhere: Prisma.OrderWhereInput = { ...dateWhere, ...partnerScope };
 
     const [
       totalOrders,
@@ -41,13 +45,24 @@ export class StatisticsService {
         _sum: { grandTotal: true },
       }),
       this.prisma.order.count({ where: revenueWhere }),
-      this.prisma.restaurant.count({ where: { isActive: true } }),
-      this.prisma.user.count({ where: { role: 'DRIVER' } }),
+      this.prisma.restaurant.count({
+        where: {
+          isActive: true,
+          ...(partnerScope.restaurantId ? { id: partnerScope.restaurantId as string } : {}),
+        },
+      }),
+      partnerScope.restaurantId
+        ? Promise.resolve(0)
+        : this.prisma.user.count({ where: { role: 'DRIVER' } }),
       this.prisma.order.count({
         where: { status: OrderStatus.PENDING, ...dateWhere },
       }),
-      this.prisma.driverProfile.count(),
-      this.prisma.driverProfile.count({ where: { isAvailable: true } }),
+      partnerScope.restaurantId
+        ? Promise.resolve(0)
+        : this.prisma.driverProfile.count(),
+      partnerScope.restaurantId
+        ? Promise.resolve(0)
+        : this.prisma.driverProfile.count({ where: { isAvailable: true } }),
     ]);
 
     const totalRevenue = revenueAgg._sum.grandTotal ?? 0;
@@ -65,10 +80,11 @@ export class StatisticsService {
     };
   }
 
-  async revenueByRestaurant(range: StatisticsRangeInput) {
+  async revenueByRestaurant(range: StatisticsRangeInput, user?: CurrentUser) {
     const where: Prisma.OrderWhereInput = {
       status: { in: REVENUE_STATUSES },
       ...this.dateRangeWhere(range),
+      ...this.partnerScope(user),
     };
 
     const rows = await this.prisma.order.groupBy({
@@ -94,8 +110,8 @@ export class StatisticsService {
     }));
   }
 
-  async ordersByStatus(range: StatisticsRangeInput = {}) {
-    const where = this.dateRangeWhere(range);
+  async ordersByStatus(range: StatisticsRangeInput = {}, user?: CurrentUser) {
+    const where = { ...this.dateRangeWhere(range), ...this.partnerScope(user) };
 
     const groups = await this.prisma.order.groupBy({
       by: ['status'],
@@ -111,9 +127,10 @@ export class StatisticsService {
     }));
   }
 
-  async dailyOrders(range: StatisticsRangeInput) {
+  async dailyOrders(range: StatisticsRangeInput, user?: CurrentUser) {
     const where: Prisma.OrderWhereInput = {
       ...this.dateRangeWhere(range),
+      ...this.partnerScope(user),
     };
 
     const orders = await this.prisma.order.findMany({
@@ -140,7 +157,7 @@ export class StatisticsService {
     }));
   }
 
-  async topRestaurants(input: TopRestaurantsInput) {
+  async topRestaurants(input: TopRestaurantsInput, user?: CurrentUser) {
     const limit = input.limit ?? 5;
     const range: StatisticsRangeInput = { from: input.from, to: input.to };
 
@@ -149,6 +166,7 @@ export class StatisticsService {
       where: {
         status: { in: REVENUE_STATUSES },
         ...this.dateRangeWhere(range),
+        ...this.partnerScope(user),
       },
       _sum: { grandTotal: true },
       _count: { _all: true },
@@ -195,5 +213,13 @@ export class StatisticsService {
     }
 
     return where;
+  }
+
+  private partnerScope(user?: CurrentUser): Prisma.OrderWhereInput {
+    if (!user) {
+      return {};
+    }
+    const filter = partnerOrderRestaurantFilter(user);
+    return filter ? { restaurantId: filter.restaurantId } : {};
   }
 }

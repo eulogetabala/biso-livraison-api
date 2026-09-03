@@ -11,6 +11,7 @@ import { PaginationArgs } from '../../common/dto/pagination.args';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Resolver(() => RestaurantModel)
 export class RestaurantsResolver {
@@ -25,8 +26,13 @@ export class RestaurantsResolver {
   }
 
   @Query(() => PaginatedRestaurantModel)
-  restaurants(@Args() pagination: PaginationArgs) {
-    return this.restaurantsService.findAll(pagination);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  restaurants(
+    @Args() pagination: PaginationArgs,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.restaurantsService.findAll(pagination, user);
   }
 
   @Query(() => RestaurantModel)
@@ -36,7 +42,7 @@ export class RestaurantsResolver {
 
   @Mutation(() => RestaurantModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   createRestaurant(@Args('input') input: CreateRestaurantInput) {
     return this.restaurantsService.create(input);
   }
@@ -44,9 +50,12 @@ export class RestaurantsResolver {
   @Mutation(() => RestaurantModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
-  updateRestaurant(@Args('input') input: UpdateRestaurantInput) {
+  updateRestaurant(
+    @Args('input') input: UpdateRestaurantInput,
+    @CurrentUser() user: CurrentUser,
+  ) {
     const { id, ...data } = input;
-    return this.restaurantsService.update(id, data);
+    return this.restaurantsService.update(id, data, user);
   }
 
   @Mutation(() => RestaurantModel)

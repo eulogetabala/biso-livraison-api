@@ -14,6 +14,7 @@ export interface LoginResult {
     phone: string;
     avatarUrl: string | null;
     role: string;
+    partnerRestaurantId: string | null;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -48,6 +49,7 @@ export class AuthService {
         phone: user.phone,
         avatarUrl: user.avatarUrl,
         role: user.role,
+        partnerRestaurantId: user.partnerRestaurantId,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

@@ -1,27 +1,15 @@
-import { Field, InputType } from '@nestjs/graphql';
+import { Field, ID, InputType } from '@nestjs/graphql';
 import {
-  IsEmail,
   IsNotEmpty,
-  IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
 
 @InputType()
-export class CreateUserInput {
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @Field()
-  @IsString()
-  @MinLength(6)
-  @MaxLength(72)
-  password: string;
-
+export class AdminCreatePartnerInput {
   @Field()
   @IsString()
   @IsNotEmpty()
@@ -38,4 +26,14 @@ export class CreateUserInput {
     message: 'phone must be a valid phone number',
   })
   phone: string;
+
+  @Field()
+  @IsString()
+  @MinLength(6)
+  @MaxLength(72)
+  password: string;
+
+  @Field(() => ID)
+  @IsUUID()
+  partnerRestaurantId: string;
 }

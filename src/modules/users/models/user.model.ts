@@ -1,5 +1,6 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
+import { RestaurantModel } from '../../restaurants/models/restaurant.model';
 
 registerEnumType(UserRole, {
   name: 'UserRole',
@@ -34,6 +35,12 @@ export class UserModel {
 
   @Field(() => UserRole)
   role: UserRole;
+
+  @Field(() => ID, { nullable: true })
+  partnerRestaurantId?: string | null;
+
+  @Field(() => RestaurantModel, { nullable: true })
+  partnerRestaurant?: RestaurantModel | null;
 
   @Field()
   createdAt: Date;

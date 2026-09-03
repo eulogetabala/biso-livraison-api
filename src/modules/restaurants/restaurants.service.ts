@@ -1,6 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Restaurant, RestaurantType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  assertRestaurantAccess,
+  isPartner,
+  requirePartnerRestaurantId,
+} from '../../common/utils/partner-scope.util';
 import { CreateRestaurantInput } from './dto/create-restaurant.input';
 import { UpdateRestaurantInput } from './dto/update-restaurant.input';
 import { SearchRestaurantsInput } from './dto/search-restaurants.input';
@@ -77,15 +83,24 @@ export class RestaurantsService {
     );
   }
 
-  findAll(pagination: PaginationArgs): Promise<PaginatedResult<Restaurant>> {
+  findAll(
+    pagination: PaginationArgs,
+    user?: CurrentUser,
+  ): Promise<PaginatedResult<Restaurant>> {
+    const where: Prisma.RestaurantWhereInput = {};
+    if (user && isPartner(user)) {
+      where.id = requirePartnerRestaurantId(user);
+    }
+
     return paginate(
       (args) =>
         this.prisma.restaurant.findMany({
+          where,
           orderBy: { createdAt: 'desc' },
           skip: args.skip,
           take: args.take,
         }),
-      () => this.prisma.restaurant.count(),
+      () => this.prisma.restaurant.count({ where }),
       pagination,
     );
   }
@@ -94,10 +109,14 @@ export class RestaurantsService {
     return this.prisma.restaurant.findUniqueOrThrow({ where: { id } });
   }
 
-  update(
+  async update(
     id: string,
     data: Partial<UpdateRestaurantInput>,
+    user?: CurrentUser,
   ): Promise<Restaurant> {
+    if (user) {
+      assertRestaurantAccess(user, id);
+    }
     return this.prisma.restaurant
       .update({
         where: { id },

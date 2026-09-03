@@ -63,7 +63,13 @@ export async function registerUser(
     `mutation Register($input: CreateUserInput!) {
       createUser(input: $input) { id phone }
     }`,
-    { input: { ...input, phoneVerified: true } },
+    { input },
   );
   expectGqlOk(body);
+}
+
+export function expectGqlForbidden(body: GqlResponse<unknown>): void {
+  expect(body.errors?.length).toBeGreaterThan(0);
+  const messages = body.errors!.map((e) => e.message).join(' ');
+  expect(messages).toMatch(/Forbidden|cannot|Unauthorized|Requires role/i);
 }

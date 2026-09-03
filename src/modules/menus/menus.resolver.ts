@@ -14,6 +14,7 @@ import { PaginationArgs } from '../../common/dto/pagination.args';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Resolver(() => MenuItemModel)
 export class MenusResolver {
@@ -48,43 +49,58 @@ export class MenusResolver {
   @Query(() => CatalogStatsModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
-  catalogStats() {
-    return this.menusService.catalogStats();
+  catalogStats(@CurrentUser() user: CurrentUser) {
+    return this.menusService.catalogStats(user);
   }
 
   @Mutation(() => MenuItemModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
-  createMenuItem(@Args('input') input: CreateMenuItemInput) {
-    return this.menusService.create(input);
+  createMenuItem(
+    @Args('input') input: CreateMenuItemInput,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.menusService.create(input, user);
   }
 
   @Mutation(() => MenuItemModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
-  updateMenuItem(@Args('input') input: UpdateMenuItemInput) {
+  updateMenuItem(
+    @Args('input') input: UpdateMenuItemInput,
+    @CurrentUser() user: CurrentUser,
+  ) {
     const { id, ...data } = input;
-    return this.menusService.update(id, data);
+    return this.menusService.update(id, data, user);
   }
 
   @Mutation(() => MenuItemModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  deleteMenuItem(@Args('id', { type: () => ID }) id: string) {
-    return this.menusService.remove(id);
+  deleteMenuItem(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.menusService.remove(id, user);
   }
 
   @Mutation(() => MenuItemSupplementModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
-  upsertMenuItemSupplement(@Args('input') input: UpsertMenuItemSupplementInput) {
-    return this.menusService.upsertSupplement(input);
+  upsertMenuItemSupplement(
+    @Args('input') input: UpsertMenuItemSupplementInput,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.menusService.upsertSupplement(input, user);
   }
 
   @Mutation(() => MenuItemSupplementModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
-  deleteMenuItemSupplement(@Args('id', { type: () => ID }) id: string) {
-    return this.menusService.deleteSupplement(id);
+  deleteMenuItemSupplement(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.menusService.deleteSupplement(id, user);
   }
 }

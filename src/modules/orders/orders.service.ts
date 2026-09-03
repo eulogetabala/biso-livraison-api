@@ -21,6 +21,10 @@ import {
   CreateOrderItemInput,
 } from './dto/create-order.input';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  assertRestaurantAccess,
+  partnerOrderRestaurantFilter,
+} from '../../common/utils/partner-scope.util';
 import { MailService } from '../mail/mail.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SearchOrdersInput } from './dto/search-orders.input';
@@ -118,8 +122,9 @@ export class OrdersService {
   findAll(
     pagination: PaginationArgs,
     input?: SearchOrdersInput,
+    user?: CurrentUser,
   ): Promise<PaginatedResult<Order>> {
-    const where = this.buildSearchWhere(input);
+    const where = this.buildSearchWhere(input, user);
 
     return paginate(
       (args) =>
@@ -135,12 +140,22 @@ export class OrdersService {
     );
   }
 
-  private buildSearchWhere(input?: SearchOrdersInput): Prisma.OrderWhereInput {
-    if (!input) {
-      return {};
+  private buildSearchWhere(
+    input?: SearchOrdersInput,
+    user?: CurrentUser,
+  ): Prisma.OrderWhereInput {
+    const where: Prisma.OrderWhereInput = {};
+
+    if (user) {
+      const partnerFilter = partnerOrderRestaurantFilter(user);
+      if (partnerFilter) {
+        where.restaurantId = partnerFilter.restaurantId;
+      }
     }
 
-    const where: Prisma.OrderWhereInput = {};
+    if (!input) {
+      return where;
+    }
 
     if (input.status) {
       where.status = input.status;
@@ -193,25 +208,39 @@ export class OrdersService {
       throw new NotFoundException(`Order ${id} not found`);
     }
 
-    // A user may only read their own order; admins can read any order.
-    if (
-      order.userId !== currentUser.id &&
-      currentUser.role !== UserRole.ADMIN
-    ) {
-      throw new ForbiddenException('You cannot access this order');
+    // Client : sa commande ; admin : toutes ; partenaire : son restaurant.
+    if (order.userId !== currentUser.id && currentUser.role !== UserRole.ADMIN) {
+      if (currentUser.role === UserRole.PARTNER) {
+        assertRestaurantAccess(currentUser, order.restaurantId);
+      } else {
+        throw new ForbiddenException('You cannot access this order');
+      }
     }
 
     return order;
   }
 
-  async updateStatus(id: string, status: OrderStatus): Promise<Order> {
+  async updateStatus(
+    id: string,
+    status: OrderStatus,
+    currentUser: CurrentUser,
+  ): Promise<Order> {
     const existing = await this.prisma.order.findUnique({
       where: { id },
-      include: { user: true },
+      include: { user: true, delivery: true },
     });
 
     if (!existing) {
       throw new NotFoundException(`Order ${id} not found`);
+    }
+
+    if (currentUser.role === UserRole.DRIVER) {
+      const assignedDriverId = existing.delivery?.driverId;
+      if (!assignedDriverId || assignedDriverId !== currentUser.id) {
+        throw new ForbiddenException('You cannot update this order');
+      }
+    } else if (currentUser.role === UserRole.PARTNER) {
+      assertRestaurantAccess(currentUser, existing.restaurantId);
     }
 
     if (existing.status === OrderStatus.CANCELLED) {

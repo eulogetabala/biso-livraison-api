@@ -1,10 +1,17 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { MenuItem, MenuItemKind, Prisma, RestaurantType } from '@prisma/client';
+import { MenuItem, MenuItemKind, Prisma, RestaurantType, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  assertRestaurantAccess,
+  isPartner,
+  requirePartnerRestaurantId,
+} from '../../common/utils/partner-scope.util';
 import { CreateMenuItemInput } from './dto/create-menu-item.input';
 import { UpdateMenuItemInput } from './dto/update-menu-item.input';
 import { SearchMenuItemsInput } from './dto/search-menu-items.input';
@@ -24,7 +31,13 @@ const menuItemInclude = {
 export class MenusService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(data: CreateMenuItemInput): Promise<MenuItem> {
+  create(data: CreateMenuItemInput, user: CurrentUser): Promise<MenuItem> {
+    if (isPartner(user)) {
+      if ((data.kind ?? MenuItemKind.RESTAURANT_DISH) === MenuItemKind.SIMPLE_PRODUCT) {
+        throw new ForbiddenException('Partners cannot manage market products');
+      }
+      assertRestaurantAccess(user, data.restaurantId);
+    }
     const payload = this.normalizeCreateInput(data);
     return this.prisma.menuItem.create({ data: payload, include: menuItemInclude });
   }
@@ -135,9 +148,14 @@ export class MenusService {
     });
   }
 
-  update(id: string, data: Partial<UpdateMenuItemInput>): Promise<MenuItem> {
+  async update(
+    id: string,
+    data: Partial<UpdateMenuItemInput>,
+    user: CurrentUser,
+  ): Promise<MenuItem> {
+    await this.assertMenuItemAccess(id, user);
     const { id: _id, ...rest } = data;
-    const payload = this.normalizeUpdateInput(rest);
+    const payload = this.normalizeUpdateInput(rest, user);
     return this.prisma.menuItem
       .update({ where: { id }, data: payload, include: menuItemInclude })
       .catch(() => {
@@ -145,13 +163,23 @@ export class MenusService {
       });
   }
 
-  remove(id: string): Promise<MenuItem> {
+  async remove(id: string, user: CurrentUser): Promise<MenuItem> {
+    await this.assertMenuItemAccess(id, user);
     return this.prisma.menuItem.delete({ where: { id } }).catch(() => {
       throw new NotFoundException(`MenuItem ${id} not found`);
     });
   }
 
-  upsertSupplement(input: UpsertMenuItemSupplementInput) {
+  async upsertSupplement(input: UpsertMenuItemSupplementInput, user: CurrentUser) {
+    await this.assertMenuItemAccess(input.menuItemId, user);
+    if (input.id) {
+      const existing = await this.prisma.menuItemSupplement.findUnique({
+        where: { id: input.id },
+      });
+      if (existing) {
+        await this.assertMenuItemAccess(existing.menuItemId, user);
+      }
+    }
     const data = {
       menuItemId: input.menuItemId,
       name: input.name.trim(),
@@ -170,20 +198,62 @@ export class MenusService {
     return this.prisma.menuItemSupplement.create({ data });
   }
 
-  deleteSupplement(id: string) {
-    return this.prisma.menuItemSupplement.delete({ where: { id } }).catch(() => {
-      throw new NotFoundException(`Supplement ${id} not found`);
+  async deleteSupplement(id: string, user: CurrentUser) {
+    const supplement = await this.prisma.menuItemSupplement.findUnique({
+      where: { id },
     });
+    if (!supplement) {
+      throw new NotFoundException(`Supplement ${id} not found`);
+    }
+    await this.assertMenuItemAccess(supplement.menuItemId, user);
+    return this.prisma.menuItemSupplement.delete({ where: { id } });
   }
 
-  async catalogStats() {
+  async catalogStats(user: CurrentUser) {
+    const partnerRestaurantId = isPartner(user)
+      ? requirePartnerRestaurantId(user)
+      : null;
+
     const [restaurants, menuDishes, simpleProducts, supplements] = await Promise.all([
-      this.prisma.restaurant.count({ where: { type: RestaurantType.RESTAURANT } }),
-      this.prisma.menuItem.count({ where: { kind: MenuItemKind.RESTAURANT_DISH } }),
-      this.prisma.menuItem.count({ where: { kind: MenuItemKind.SIMPLE_PRODUCT } }),
-      this.prisma.menuItemSupplement.count(),
+      partnerRestaurantId
+        ? this.prisma.restaurant.count({ where: { id: partnerRestaurantId } })
+        : this.prisma.restaurant.count({ where: { type: RestaurantType.RESTAURANT } }),
+      this.prisma.menuItem.count({
+        where: {
+          kind: MenuItemKind.RESTAURANT_DISH,
+          ...(partnerRestaurantId ? { restaurantId: partnerRestaurantId } : {}),
+        },
+      }),
+      partnerRestaurantId
+        ? Promise.resolve(0)
+        : this.prisma.menuItem.count({ where: { kind: MenuItemKind.SIMPLE_PRODUCT } }),
+      this.prisma.menuItemSupplement.count({
+        where: partnerRestaurantId
+          ? { menuItem: { restaurantId: partnerRestaurantId } }
+          : undefined,
+      }),
     ]);
     return { restaurants, menuDishes, simpleProducts, supplements };
+  }
+
+  private async assertMenuItemAccess(
+    menuItemId: string,
+    user: CurrentUser,
+  ): Promise<void> {
+    if (user.role === UserRole.ADMIN) {
+      return;
+    }
+    const item = await this.prisma.menuItem.findUnique({
+      where: { id: menuItemId },
+      select: { restaurantId: true, kind: true },
+    });
+    if (!item) {
+      throw new NotFoundException(`MenuItem ${menuItemId} not found`);
+    }
+    if (item.kind === MenuItemKind.SIMPLE_PRODUCT) {
+      throw new ForbiddenException('Partners cannot manage market products');
+    }
+    assertRestaurantAccess(user, item.restaurantId);
   }
 
   private normalizeCreateInput(data: CreateMenuItemInput): Prisma.MenuItemCreateInput {
@@ -232,6 +302,7 @@ export class MenusService {
 
   private normalizeUpdateInput(
     data: Partial<Omit<UpdateMenuItemInput, 'id'>>,
+    user?: CurrentUser,
   ): Prisma.MenuItemUpdateInput {
     const payload: Prisma.MenuItemUpdateInput = {};
 
@@ -251,6 +322,9 @@ export class MenusService {
         : { disconnect: true };
     }
     if (data.restaurantId !== undefined && data.restaurantId) {
+      if (user) {
+        assertRestaurantAccess(user, data.restaurantId);
+      }
       payload.restaurant = { connect: { id: data.restaurantId } };
     }
 

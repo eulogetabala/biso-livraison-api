@@ -16,6 +16,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { assertRestaurantAccess } from '../../common/utils/partner-scope.util';
 import { MailService } from '../mail/mail.service';
 import { SmsService } from '../sms/sms.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -80,7 +81,13 @@ export class DeliveriesService {
     private readonly trackingService: TrackingService,
   ) {}
 
-  async assignAvailableDriver(orderId: string): Promise<Delivery> {
+  async assignAvailableDriver(
+    orderId: string,
+    user?: CurrentUser,
+  ): Promise<Delivery> {
+    if (user) {
+      await this.assertOrderPartnerAccess(orderId, user);
+    }
     const { delivery, order, driver } = await this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
@@ -199,7 +206,14 @@ export class DeliveriesService {
     ].join('\n');
   }
 
-  async assign(orderId: string, driverId: string): Promise<Delivery> {
+  async assign(
+    orderId: string,
+    driverId: string,
+    user?: CurrentUser,
+  ): Promise<Delivery> {
+    if (user) {
+      await this.assertOrderPartnerAccess(orderId, user);
+    }
     const { delivery, order, driver } = await this.prisma.$transaction(async (tx) => {
       const driver = await this.assertDriverAssignable(tx, driverId);
       const order = await tx.order.findUnique({
@@ -522,7 +536,10 @@ export class DeliveriesService {
     );
   }
 
-  findByOrder(orderId: string): Promise<Delivery> {
+  async findByOrder(orderId: string, user?: CurrentUser): Promise<Delivery> {
+    if (user) {
+      await this.assertOrderPartnerAccess(orderId, user);
+    }
     return this.prisma.delivery
       .findUniqueOrThrow({
         where: { orderId },
@@ -531,6 +548,23 @@ export class DeliveriesService {
       .catch(() => {
         throw new NotFoundException(`No delivery for order ${orderId}`);
       });
+  }
+
+  private async assertOrderPartnerAccess(
+    orderId: string,
+    user: CurrentUser,
+  ): Promise<void> {
+    if (user.role !== UserRole.PARTNER) {
+      return;
+    }
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { restaurantId: true },
+    });
+    if (!order) {
+      throw new NotFoundException(`Order ${orderId} not found`);
+    }
+    assertRestaurantAccess(user, order.restaurantId);
   }
 
   async updateStatus(

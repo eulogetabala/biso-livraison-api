@@ -6,6 +6,7 @@ import { DriverModel } from './models/driver.model';
 import { UpdateDriverProfileInput } from './dto/update-driver-profile.input';
 import { SetDriverAvailabilityInput } from './dto/set-driver-availability.input';
 import { AdminCreateDriverInput } from './dto/admin-create-driver.input';
+import { AdminUpdateDriverInput } from './dto/admin-update-driver.input';
 import { AdminSetDriverAvailabilityInput } from './dto/admin-set-driver-availability.input';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -96,5 +97,12 @@ export class DriversResolver {
       input.driverId,
       input.isAvailable,
     );
+  }
+
+  @Mutation(() => DriverModel)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  adminUpdateDriver(@Args('input') input: AdminUpdateDriverInput) {
+    return this.driversService.adminUpdateDriver(input);
   }
 }

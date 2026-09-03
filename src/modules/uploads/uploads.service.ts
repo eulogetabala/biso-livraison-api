@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import { AppConfig } from '../../config/configuration';
 
 export interface UploadedFileMetadata {
@@ -29,7 +30,6 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/png',
   'image/webp',
   'image/gif',
-  'image/svg+xml',
 ]);
 
 const EXTENSIONS: Record<string, string> = {
@@ -37,7 +37,6 @@ const EXTENSIONS: Record<string, string> = {
   'image/png': '.png',
   'image/webp': '.webp',
   'image/gif': '.gif',
-  'image/svg+xml': '.svg',
 };
 
 export const MAX_UPLOAD_SIZE = 5 * 1024 * 1024; // 5 Mo
@@ -47,15 +46,28 @@ export class UploadsService implements OnModuleInit {
   private readonly logger = new Logger(UploadsService.name);
   private readonly uploadDir: string;
   private readonly publicUrl: string;
+  private readonly cloudinaryConfig: AppConfig['uploads']['cloudinary'];
 
   constructor(configService: ConfigService) {
     const uploads = configService.getOrThrow<AppConfig['uploads']>('uploads');
     this.uploadDir = uploads.directory;
     this.publicUrl = uploads.publicUrl;
+    this.cloudinaryConfig = uploads.cloudinary;
+
+    if (this.cloudinaryConfig.enabled) {
+      cloudinary.config({
+        cloud_name: this.cloudinaryConfig.cloudName,
+        api_key: this.cloudinaryConfig.apiKey,
+        api_secret: this.cloudinaryConfig.apiSecret,
+      });
+      this.logger.log('Cloudinary upload enabled');
+    }
   }
 
   onModuleInit(): void {
-    this.ensureUploadDir();
+    if (!this.cloudinaryConfig.enabled) {
+      this.ensureUploadDir();
+    }
   }
 
   ensureUploadDir(): void {
@@ -69,12 +81,7 @@ export class UploadsService implements OnModuleInit {
     return ALLOWED_MIME_TYPES.has(mimeType);
   }
 
-  /**
-   * Enregistre le fichier sur disque et retourne l'URL publique.
-   * Le nom de fichier est généré de façon aléatoire (pas de confiance
-   * dans le nom original fourni par le client).
-   */
-  store(file: StoredFile | undefined): UploadedFileMetadata {
+  async store(file: StoredFile | undefined): Promise<UploadedFileMetadata> {
     if (!file) {
       throw new BadRequestException('Aucun fichier reçu (champ "file")');
     }
@@ -82,7 +89,7 @@ export class UploadsService implements OnModuleInit {
     if (!this.isAllowedMimeType(file.mimetype)) {
       throw new BadRequestException(
         `Type de fichier non autorisé : ${file.mimetype}. ` +
-          'Types acceptés : jpeg, png, webp, gif, svg.',
+          'Types acceptés : jpeg, png, webp, gif.',
       );
     }
 
@@ -92,6 +99,14 @@ export class UploadsService implements OnModuleInit {
       );
     }
 
+    if (this.cloudinaryConfig.enabled) {
+      return this.storeOnCloudinary(file);
+    }
+
+    return this.storeOnDisk(file);
+  }
+
+  private storeOnDisk(file: StoredFile): UploadedFileMetadata {
     this.ensureUploadDir();
 
     const extension = EXTENSIONS[file.mimetype] ?? '.bin';
@@ -105,5 +120,39 @@ export class UploadsService implements OnModuleInit {
       size: file.size,
       mimeType: file.mimetype,
     };
+  }
+
+  private storeOnCloudinary(file: StoredFile): Promise<UploadedFileMetadata> {
+    const extension = EXTENSIONS[file.mimetype] ?? '';
+    const publicId = `${Date.now()}-${randomBytes(6).toString('hex')}${extension}`;
+
+    return new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: this.cloudinaryConfig.folder,
+          public_id: publicId,
+          resource_type: 'image',
+        },
+        (error, result) => {
+          if (error || !result) {
+            reject(
+              new BadRequestException(
+                error?.message ?? 'Échec de l’upload Cloudinary',
+              ),
+            );
+            return;
+          }
+
+          resolve({
+            url: result.secure_url,
+            originalName: file.originalname,
+            size: file.size,
+            mimeType: file.mimetype,
+          });
+        },
+      );
+
+      stream.end(file.buffer);
+    });
   }
 }

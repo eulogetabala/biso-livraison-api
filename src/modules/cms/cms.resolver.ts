@@ -41,63 +41,63 @@ export class CmsResolver {
 
   @Query(() => [HomeBannerModel])
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   allHomeBanners() {
     return this.cmsService.allHomeBanners();
   }
 
   @Query(() => [MarketCategoryModel])
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   allMarketCategories() {
     return this.cmsService.allMarketCategories();
   }
 
   @Query(() => [CuisineTypeConfigModel])
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   allCuisineTypes() {
     return this.cmsService.allCuisineTypes();
   }
 
   @Mutation(() => HomeBannerModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   upsertHomeBanner(@Args('input') input: UpsertHomeBannerInput) {
     return this.cmsService.upsertHomeBanner(input);
   }
 
   @Mutation(() => MarketCategoryModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   upsertMarketCategory(@Args('input') input: UpsertMarketCategoryInput) {
     return this.cmsService.upsertMarketCategory(input);
   }
 
   @Mutation(() => CuisineTypeConfigModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   upsertCuisineType(@Args('input') input: UpsertCuisineTypeInput) {
     return this.cmsService.upsertCuisineType(input);
   }
 
   @Mutation(() => HomeBannerModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   deleteHomeBanner(@Args('id', { type: () => ID }) id: string) {
     return this.cmsService.deleteHomeBanner(id);
   }
 
   @Mutation(() => MarketCategoryModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   deleteMarketCategory(@Args('id', { type: () => ID }) id: string) {
     return this.cmsService.deleteMarketCategory(id);
   }
 
   @Mutation(() => CuisineTypeConfigModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   deleteCuisineType(@Args('id', { type: () => ID }) id: string) {
     return this.cmsService.deleteCuisineType(id);
   }

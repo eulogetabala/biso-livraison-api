@@ -28,12 +28,13 @@ export class OrdersResolver {
 
   @Query(() => PaginatedOrderModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
   orders(
     @Args() pagination: PaginationArgs,
+    @CurrentUser() user: CurrentUser,
     @Args('input', { nullable: true }) input?: SearchOrdersInput,
   ) {
-    return this.ordersService.findAll(pagination, input);
+    return this.ordersService.findAll(pagination, input, user);
   }
 
   @Query(() => OrderModel)
@@ -57,8 +58,11 @@ export class OrdersResolver {
   @Mutation(() => OrderModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER, UserRole.DRIVER)
-  updateOrderStatus(@Args('input') input: UpdateOrderStatusInput) {
-    return this.ordersService.updateStatus(input.id, input.status);
+  updateOrderStatus(
+    @Args('input') input: UpdateOrderStatusInput,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.ordersService.updateStatus(input.id, input.status, user);
   }
 
   @Mutation(() => OrderModel)

@@ -24,7 +24,7 @@ export class ParcelsResolver {
 
   @Query(() => PaginatedParcelModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   parcels(
     @Args() pagination: PaginationArgs,
     @Args('input', { nullable: true }) input?: SearchParcelsInput,
@@ -70,14 +70,14 @@ export class ParcelsResolver {
 
   @Mutation(() => ParcelModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   assignDriverToParcel(@Args('input') input: AssignDriverToParcelInput) {
     return this.parcelsService.assignDriver(input.parcelId, input.driverId);
   }
 
   @Mutation(() => ParcelModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @Roles(UserRole.ADMIN)
   assignAvailableDriverToParcel(@Args('parcelId', { type: () => ID }) parcelId: string) {
     return this.parcelsService.assignAvailableDriver(parcelId);
   }

@@ -35,7 +35,7 @@ export class UploadsController {
   @ApiOperation({
     summary: 'Uploader une image',
     description:
-      'Enregistre une image (JPEG, PNG, WebP, GIF, SVG) et retourne son URL publique. ' +
+      'Enregistre une image (JPEG, PNG, WebP, GIF) et retourne son URL publique. ' +
       `Taille maximale : ${MAX_UPLOAD_SIZE / 1024 / 1024} Mo. ` +
       'Authentification JWT requise.',
   })
@@ -67,9 +67,9 @@ export class UploadsController {
       limits: { fileSize: MAX_UPLOAD_SIZE },
     }),
   )
-  uploadImage(
+  async uploadImage(
     @UploadedFile() file: StoredFile | undefined,
-  ): UploadedFileMetadata {
+  ): Promise<UploadedFileMetadata> {
     return this.uploadsService.store(file);
   }
 }

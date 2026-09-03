@@ -36,22 +36,31 @@ export class DeliveriesResolver {
   @Query(() => DeliveryModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
-  deliveryByOrder(@Args('orderId', { type: () => ID }) orderId: string) {
-    return this.deliveriesService.findByOrder(orderId);
+  deliveryByOrder(
+    @Args('orderId', { type: () => ID }) orderId: string,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.deliveriesService.findByOrder(orderId, user);
   }
 
   @Mutation(() => DeliveryModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
-  assignDriver(@Args('input') input: AssignDriverInput) {
-    return this.deliveriesService.assign(input.orderId, input.driverId);
+  assignDriver(
+    @Args('input') input: AssignDriverInput,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.deliveriesService.assign(input.orderId, input.driverId, user);
   }
 
   @Mutation(() => DeliveryModel)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
-  assignAvailableDriver(@Args('orderId', { type: () => ID }) orderId: string) {
-    return this.deliveriesService.assignAvailableDriver(orderId);
+  assignAvailableDriver(
+    @Args('orderId', { type: () => ID }) orderId: string,
+    @CurrentUser() user: CurrentUser,
+  ) {
+    return this.deliveriesService.assignAvailableDriver(orderId, user);
   }
 
   @Mutation(() => DeliveryModel)
