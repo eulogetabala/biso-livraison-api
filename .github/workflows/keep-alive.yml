@@ -1,11 +1,11 @@
 # Évite le sleep Render free tier (~15 min sans trafic → cold start 30–60 s).
-# Ping /health toutes les 10 minutes.
+# Ping /health toutes les 5 minutes (minimum GitHub Actions).
 
 name: Keep Render API alive
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
