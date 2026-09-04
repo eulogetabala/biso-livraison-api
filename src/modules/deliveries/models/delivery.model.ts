@@ -1,6 +1,7 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { DeliveryStatus } from '@prisma/client';
 import { OrderModel } from '../../orders/models/order.model';
+import { ParcelModel } from '../../parcels/models/parcel.model';
 import { UserModel } from '../../users/models/user.model';
 
 registerEnumType(DeliveryStatus, {
@@ -33,6 +34,9 @@ export class DeliveryModel {
 
   @Field(() => OrderModel, { nullable: true })
   order?: OrderModel;
+
+  @Field(() => ParcelModel, { nullable: true })
+  parcel?: ParcelModel;
 
   @Field(() => UserModel, { nullable: true })
   driver?: UserModel;

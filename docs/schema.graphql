@@ -221,6 +221,7 @@ type DeliveryModel {
   id: ID!
   order: OrderModel
   orderId: ID
+  parcel: ParcelModel
   parcelId: ID
   pickedUpAt: DateTime
   status: DeliveryStatus!

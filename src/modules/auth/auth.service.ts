@@ -14,6 +14,8 @@ export interface LoginResult {
     phone: string;
     avatarUrl: string | null;
     role: string;
+    phoneVerified: boolean;
+    isBlocked: boolean;
     partnerRestaurantId: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -49,6 +51,8 @@ export class AuthService {
         phone: user.phone,
         avatarUrl: user.avatarUrl,
         role: user.role,
+        phoneVerified: user.phoneVerified,
+        isBlocked: user.isBlocked,
         partnerRestaurantId: user.partnerRestaurantId,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
