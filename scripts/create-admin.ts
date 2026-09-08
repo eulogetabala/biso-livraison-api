@@ -23,24 +23,25 @@ const prisma = new PrismaClient({
 
 async function main() {
   const password = process.env.ADMIN_PASSWORD ?? 'Admin123!';
-  const phone = process.env.ADMIN_PHONE ?? '+242065644299';
+  const phone = (process.env.ADMIN_PHONE ?? '+242065644299').trim().replace(/\s+/g, '');
   const passwordHash = await bcrypt.hash(password, 10);
+  const isSeedAdmin = phone === '+242065644299';
 
   const admin = await prisma.user.upsert({
     where: { phone },
     create: {
-      id: SEED_IDS.admin,
-      firstName: 'Admin',
-      lastName: 'Biso',
+      ...(isSeedAdmin ? { id: SEED_IDS.admin } : {}),
+      firstName: process.env.ADMIN_FIRST_NAME ?? 'Admin',
+      lastName: process.env.ADMIN_LAST_NAME ?? 'Biso',
       phone,
-      email: 'admin@biso.cg',
+      email: process.env.ADMIN_EMAIL ?? 'admin@biso.cg',
       password: passwordHash,
       role: UserRole.ADMIN,
       phoneVerified: true,
     },
     update: {
-      firstName: 'Admin',
-      lastName: 'Biso',
+      firstName: process.env.ADMIN_FIRST_NAME ?? 'Admin',
+      lastName: process.env.ADMIN_LAST_NAME ?? 'Biso',
       password: passwordHash,
       role: UserRole.ADMIN,
       phoneVerified: true,
@@ -48,6 +49,7 @@ async function main() {
   });
 
   console.log(`Admin prêt : ${admin.phone} (role ${admin.role})`);
+  console.log(`Mot de passe : ${password}`);
 }
 
 main()
