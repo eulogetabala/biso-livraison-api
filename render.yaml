@@ -18,7 +18,7 @@ services:
     plan: free
     healthCheckPath: /health
     buildCommand: npm install --omit=peer && npx prisma generate && NODE_OPTIONS=--max-old-space-size=2048 npm run build && npx prisma db push
-    startCommand: node dist/src/main.js
+    startCommand: node dist/main.js
     envVars:
       - key: NODE_ENV
         value: production

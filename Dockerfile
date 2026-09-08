@@ -31,4 +31,4 @@ RUN mkdir -p public/uploads /var/data/uploads
 EXPOSE 3001
 
 # Schéma DB puis démarrage (pas de migrations versionnées pour l’instant)
-CMD ["sh", "-c", "npx prisma db push && node dist/src/main.js"]
+CMD ["sh", "-c", "npx prisma db push && node dist/main.js"]
