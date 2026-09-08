@@ -14,6 +14,9 @@ export class CuisineTypeConfigModel {
   @Field({ nullable: true })
   emoji?: string;
 
+  @Field({ nullable: true })
+  iconUrl?: string;
+
   @Field()
   sortOrder: number;
 

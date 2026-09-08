@@ -189,6 +189,7 @@ input CreateUserInput {
 type CuisineTypeConfigModel {
   createdAt: DateTime!
   emoji: String
+  iconUrl: String
   id: ID!
   isActive: Boolean!
   label: String!
@@ -897,6 +898,7 @@ input UpdateReviewInput {
 
 input UpsertCuisineTypeInput {
   emoji: String
+  iconUrl: String
   id: ID
   isActive: Boolean
   label: String!

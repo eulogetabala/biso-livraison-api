@@ -279,6 +279,7 @@ model CuisineTypeConfig {
   value     String   @unique
   label     String
   emoji     String?
+  iconUrl   String?
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
 

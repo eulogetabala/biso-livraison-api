@@ -134,6 +134,11 @@ export class UpsertCuisineTypeInput {
   @IsString()
   emoji?: string;
 
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  iconUrl?: string;
+
   @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()
