@@ -40,6 +40,17 @@ services:
         value: public/uploads
       - key: PUBLIC_UPLOAD_URL
         value: /uploads
+      # Cloudinary — persistance des images (sans ça, disque éphémère Render :
+      # images perdues à chaque redeploy). Le cloud name n'est pas un secret.
+      # Les 3 premières doivent être définies ENSEMBLE (sinon retour au disque).
+      - key: CLOUDINARY_CLOUD_NAME
+        value: dscib2mxz
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: biso-livraison
       - key: ALLOW_TEST_OTP
         value: "false"
       - key: THROTTLE_DEFAULT_LIMIT
