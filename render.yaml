@@ -17,8 +17,14 @@ services:
     runtime: node
     plan: free
     healthCheckPath: /health
-    buildCommand: npm install --omit=peer && npx prisma generate && NODE_OPTIONS=--max-old-space-size=2048 npm run build && npx prisma db push
-    startCommand: node dist/main.js
+    # Le build NE DOIT PAS toucher la base : sinon un P1001 (DB momentanément
+    # injoignable) fait échouer tout le déploiement. La synchro du schéma se
+    # fait au démarrage (startCommand), de façon non bloquante.
+    buildCommand: npm install --omit=peer && npx prisma generate && NODE_OPTIONS=--max-old-space-size=2048 npm run build
+    # db push est tenté à chaque démarrage mais n'empêche PAS l'app de booter :
+    # le boot résilient expose /health en "degraded" tant que la base est down,
+    # et le schéma sera resynchronisé au prochain redémarrage une fois la DB OK.
+    startCommand: (npx prisma db push || echo "⚠️  prisma db push a échoué (base injoignable) — démarrage en mode dégradé"); node dist/main.js
     envVars:
       - key: NODE_ENV
         value: production
