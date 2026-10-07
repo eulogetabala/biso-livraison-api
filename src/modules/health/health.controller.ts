@@ -1,4 +1,9 @@
-import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -9,6 +14,8 @@ import { HealthResponseDto } from './dto/health-response.dto';
 @Controller('health')
 @SkipThrottle(SKIP_ALL_THROTTLES)
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
@@ -24,8 +31,13 @@ export class HealthController {
 
     try {
       await this.prisma.ping();
-    } catch {
+    } catch (error) {
       database = 'down';
+      this.logger.error(
+        `Health check: base de données injoignable — ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
 
     const payload: HealthResponseDto = {

@@ -1,9 +1,11 @@
 import 'dotenv/config';
-import { defineConfig, env } from 'prisma/config';
+import { defineConfig } from 'prisma/config';
+import { resolveDatabaseUrl } from './src/config/database-url';
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   datasource: {
-    url: env('DATABASE_URL'),
+    // Même sélection que l'app : local = Docker, prod = DATABASE_URL.
+    url: resolveDatabaseUrl(),
   },
 });

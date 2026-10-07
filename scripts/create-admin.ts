@@ -3,18 +3,19 @@ import { PrismaClient, UserRole } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcrypt';
 import { Pool } from 'pg';
+import { resolveDatabaseUrl } from '../src/config/database-url';
+import { buildPoolOptions } from '../src/prisma/pg-connection';
 import { SEED_IDS } from '../prisma/seed-data';
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = resolveDatabaseUrl();
 if (!connectionString) {
   throw new Error('DATABASE_URL is not defined');
 }
 
+const poolOptions = buildPoolOptions(connectionString);
 const pool = new Pool({
-  connectionString,
-  ssl: connectionString.includes('render.com')
-    ? { rejectUnauthorized: false }
-    : undefined,
+  connectionString: poolOptions.connectionString,
+  ssl: poolOptions.ssl,
 });
 
 const prisma = new PrismaClient({

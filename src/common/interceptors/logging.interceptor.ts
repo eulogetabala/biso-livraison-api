@@ -15,6 +15,13 @@ export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('GraphQL');
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    // Cet intercepteur est global : il voit aussi les requêtes REST (ex. /health).
+    // On ne logue donc que les opérations GraphQL pour éviter les faux
+    // « GraphQL unknown unknown ».
+    if (context.getType<string>() !== 'graphql') {
+      return next.handle();
+    }
+
     const gqlCtx = GqlExecutionContext.create(context);
     const info = gqlCtx.getInfo<GraphQLResolveInfo>();
     const operationType = info?.operation?.operation ?? 'unknown';

@@ -1,4 +1,5 @@
 import type { JwtModuleOptions } from '@nestjs/jwt';
+import { resolveDatabaseUrl } from './database-url';
 
 export type JwtExpiresIn = NonNullable<
   JwtModuleOptions['signOptions']
@@ -77,7 +78,8 @@ export default (): AppConfig => {
       port: parseInt(process.env.PORT ?? '3001', 10),
     },
     database: {
-      url: process.env.DATABASE_URL ?? '',
+      // Prod → DATABASE_URL (Render) ; local → DATABASE_URL_LOCAL (Docker).
+      url: resolveDatabaseUrl(),
       poolMax: parseInt(process.env.DB_POOL_MAX ?? '10', 10),
     },
     throttler: {
