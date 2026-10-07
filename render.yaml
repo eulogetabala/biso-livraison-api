@@ -1,15 +1,14 @@
 # Render FREE — repo biso-livraison-api (backend seul)
 # Branch : main
 #
-# Après deploy, renseigner dans le dashboard :
+# La base de données est un Postgres EXTERNE (Neon — gratuit, sans expiration).
+# La base Render gratuite a été suspendue par Render (expiration ~30 j) ; on ne
+# l'utilise plus. Renseigner DATABASE_URL avec la chaîne Neon :
+#   postgresql://<user>:<pwd>@<host>.neon.tech/<db>?sslmode=require
+#
+# Après deploy, renseigner aussi dans le dashboard :
 #   CORS_ORIGINS = https://votre-dashboard.onrender.com
 #   TWILIO_* (Verify obligatoire en prod)
-
-databases:
-  - name: biso-db
-    plan: free
-    databaseName: delivery_db
-    user: biso
 
 services:
   - type: web
@@ -30,10 +29,9 @@ services:
         value: production
       - key: NODE_VERSION
         value: "22"
+      # Postgres externe (Neon). Chaîne à renseigner dans le dashboard Render.
       - key: DATABASE_URL
-        fromDatabase:
-          name: biso-db
-          property: connectionString
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
