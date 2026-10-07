@@ -21,12 +21,17 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     // pg-connection-string et rend le comportement TLS déterministe.
     const { connectionString, ssl } = buildPoolOptions(db.url);
 
+    // Neon (et autres Postgres serverless) mettent la base en veille : le réveil
+    // peut prendre plusieurs secondes. On garde un timeout de connexion large et
+    // configurable pour éviter des "connection timeout" au premier appel.
+    const connectTimeoutMs = Number(process.env.DB_CONNECT_TIMEOUT_MS ?? 15_000);
+
     const pool = new Pool({
       connectionString,
       ssl,
       max: db.poolMax,
       idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 5_000,
+      connectionTimeoutMillis: Number.isFinite(connectTimeoutMs) ? connectTimeoutMs : 15_000,
     });
 
     const adapter = new PrismaPg(pool);
